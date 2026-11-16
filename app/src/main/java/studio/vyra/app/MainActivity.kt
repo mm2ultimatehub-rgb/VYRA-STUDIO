@@ -432,7 +432,7 @@ private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var downloadingPatchId by remember { mutableStateOf<String?>(null) }
-    var downloadStatus by remember { mutableStateOf<String?>(null) }
+    var downloadStatuses by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -448,15 +448,14 @@ private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
                     Button(
                         onClick = {
                             downloadingPatchId = patch.id
-                            downloadStatus = null
                             scope.launch {
                                 try {
                                     val file = withContext(Dispatchers.IO) {
                                         PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
                                     }
-                                    downloadStatus = "Verified and saved in app cache: ${file.name}"
+                                    downloadStatuses = downloadStatuses + (patch.id to "Verified and saved in app cache: ${file.name}")
                                 } catch (error: Exception) {
-                                    downloadStatus = error.message ?: "Patch download failed."
+                                    downloadStatuses = downloadStatuses + (patch.id to (error.message ?: "Patch download failed."))
                                 } finally {
                                     downloadingPatchId = null
                                 }
@@ -467,8 +466,8 @@ private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
                     ) {
                         Text(if (downloadingPatchId == patch.id) "Downloading…" else "Download & verify")
                     }
-                    if (downloadStatus != null) {
-                        Text(downloadStatus!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    downloadStatuses[patch.id]?.let { message ->
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
