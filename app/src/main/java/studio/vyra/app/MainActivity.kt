@@ -61,6 +61,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
+import studio.vyra.app.repository.PatchCompatibility
+import studio.vyra.app.repository.PatchEntry
 import studio.vyra.app.repository.PatchRepository
 import studio.vyra.app.repository.RepositoryClient
 import studio.vyra.app.repository.RepositorySourceStore
@@ -227,6 +229,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
     var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
     var inspectionError by remember(selectedApk) { mutableStateOf<String?>(null) }
     var isInspecting by remember(selectedApk) { mutableStateOf(false) }
+    var patchMatches by remember(selectedApk) { mutableStateOf<List<Pair<String, PatchEntry>>>(emptyList()) }
+    var isCheckingPatches by remember(selectedApk) { mutableStateOf(false) }
+    var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -241,6 +246,36 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
         }
     }
 
+
+    LaunchedEffect(inspection) {
+        val apk = inspection ?: return@LaunchedEffect
+        isCheckingPatches = true
+        patchLookupMessage = null
+        try {
+            val store = RepositorySourceStore(context)
+            val client = RepositoryClient()
+            val urls = withContext(Dispatchers.IO) { store.getUrls() }
+            val matches = mutableListOf<Pair<String, PatchEntry>>()
+            for (sourceUrl in urls) {
+                try {
+                    val repository = withContext(Dispatchers.IO) { client.fetch(sourceUrl) }
+                    repository.patches.filter { PatchCompatibility.matches(it, apk) }
+                        .forEach { matches += repository.name to it }
+                } catch (_: Exception) {
+                    // A failed source is reported in the Sources screen; other sources remain usable.
+                }
+            }
+            patchMatches = matches
+            patchLookupMessage = if (matches.isEmpty()) {
+                "No compatible patches found in your saved sources."
+            } else {
+                "${matches.size} compatible patch(es) found."
+            }
+        } finally {
+            isCheckingPatches = false
+        }
+    }
+
     PageColumn(padding) {
         PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
         InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
@@ -252,7 +287,17 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
             inspectionError != null -> InfoCard("Inspection failed", inspectionError ?: "Unknown inspection error.")
             inspection != null -> ApkDetailsCard(inspection!!)
         }
-        InfoCard("2. Compatibility", "Repository patches can now be checked against the selected app's package and version. No patch is applied during inspection.")
+        when {
+            isCheckingPatches -> InfoCard("Checking compatibility", "Comparing this APK with saved repository indexes…")
+            patchLookupMessage != null -> InfoCard("Compatibility", patchLookupMessage!!)
+        }
+        patchMatches.forEach { (repositoryName, patch) ->
+            InfoCard(
+                title = patch.name,
+                body = "Source: ${repositoryName}\nTarget: ${patch.targetPackage}\nFormat: ${patch.format.uppercase()}\nArtifact SHA-256: ${patch.artifactSha256}",
+            )
+        }
+        InfoCard("2. Compatibility", "Only package and version-range matches are listed. Review the patch source and requirements before proceeding.")
         InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
     }
 }
