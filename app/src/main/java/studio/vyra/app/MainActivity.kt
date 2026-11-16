@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -342,6 +343,7 @@ private fun SourcesScreen(padding: PaddingValues) {
     var sources by remember { mutableStateOf<List<Pair<String, PatchRepository>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    var pendingSource by remember { mutableStateOf<Pair<String, PatchRepository>?>(null) }
 
     fun refreshAll() {
         scope.launch {
@@ -390,10 +392,8 @@ private fun SourcesScreen(padding: PaddingValues) {
                     status = null
                     try {
                         val repository = withContext(Dispatchers.IO) { client.fetch(candidate) }
-                        withContext(Dispatchers.IO) { store.addUrl(candidate) }
-                        sources = (sources.filterNot { it.first == candidate } + (candidate to repository))
-                        url = ""
-                        status = "Added ${repository.name} — ${repository.patches.size} patch(es)."
+                        pendingSource = candidate to repository
+                        status = "Repository validated. Review its origin before adding it."
                     } catch (error: Exception) {
                         status = error.message ?: "Could not add repository."
                     } finally {
@@ -422,13 +422,60 @@ private fun SourcesScreen(padding: PaddingValues) {
             InfoCard("No sources added", "Paste a direct HTTPS URL to a repository index that follows the Vyra Repository Index v1 format.")
         }
         sources.forEach { (sourceUrl, repository) ->
-            RepositoryCard(sourceUrl, repository)
+            RepositoryCard(
+                sourceUrl = sourceUrl,
+                repository = repository,
+                onRemove = {
+                    scope.launch {
+                        withContext(Dispatchers.IO) { store.removeUrl(sourceUrl) }
+                        sources = sources.filterNot { it.first == sourceUrl }
+                        status = "Removed source: ${repository.name}"
+                    }
+                },
+            )
         }
+    }
+
+    pendingSource?.let { (candidate, repository) ->
+        AlertDialog(
+            onDismissRequest = { pendingSource = null },
+            title = { Text("Review patch source") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(repository.name, fontWeight = FontWeight.SemiBold)
+                    Text(repository.description.ifBlank { "No description provided." })
+                    Text(candidate, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Text("${repository.patches.size} patch(es) listed.")
+                    Text("Only add sources you trust. A future patch engine may execute code supplied by a source. VYRA currently validates and downloads artifacts but does not execute patches.")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val accepted = pendingSource
+                    if (accepted != null) {
+                        scope.launch {
+                            withContext(Dispatchers.IO) { store.addUrl(accepted.first) }
+                            sources = sources.filterNot { it.first == accepted.first } + accepted
+                            url = ""
+                            status = "Added ${accepted.second.name} — ${accepted.second.patches.size} patch(es)."
+                            pendingSource = null
+                        }
+                    }
+                }) { Text("I trust this source") }
+            },
+            dismissButton = {
+                Button(onClick = { pendingSource = null }) { Text("Cancel") }
+            },
+        )
     }
 }
 
 @Composable
-private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
+private fun RepositoryCard(
+    sourceUrl: String,
+    repository: PatchRepository,
+    onRemove: () -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var downloadingPatchId by remember { mutableStateOf<String?>(null) }
@@ -440,6 +487,9 @@ private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
             Text(repository.description.ifBlank { "No repository description provided." }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(sourceUrl, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             Text("${repository.patches.size} patch(es)", style = MaterialTheme.typography.labelMedium)
+            Button(onClick = onRemove, shape = RoundedCornerShape(12.dp)) {
+                Text("Remove source")
+            }
             repository.patches.forEach { patch ->
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(patch.name, fontWeight = FontWeight.Medium)
