@@ -6,6 +6,7 @@ data class PatchRepository(
     val description: String,
     val homepage: String?,
     val patches: List<PatchEntry>,
+    val sourceUrl: String? = null,
 )
 
 data class PatchEntry(
