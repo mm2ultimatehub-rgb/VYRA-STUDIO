@@ -11,6 +11,7 @@
 - [x] Commit Android project skeleton and first navigation shell.
 - [x] Establish dark-first design tokens and Material 3 theme.
 - [x] Add Store, Patcher, Creator, Repositories, and Builds navigation destinations.
+- [x] Add a GitHub Actions workflow for debug APK builds.
 - [ ] Add Gradle wrapper and verify a clean Android build in CI.
 - [ ] Add UI and domain unit tests.
 
