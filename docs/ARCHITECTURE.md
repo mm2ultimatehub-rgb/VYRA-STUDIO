@@ -61,3 +61,6 @@ Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Sec
 - Repository metadata is parsed with the v1 schema validator; patch artifacts are not fetched or executed during source refresh.
 - User-added source URLs are stored in app-private preferences (up to 30 sources).
 - APK compatibility is matched locally using package name and optional version-code bounds.
+- Patch artifacts are downloaded only after an explicit user action, over HTTPS, with redirects disabled and a 50 MB cap.
+- The downloaded artifact is SHA-256 checked against repository metadata before it is kept in the app-private cache; failed integrity checks discard the temporary file.
+- Verified MPP files are not executed or applied yet; patch-engine integration remains a separate milestone.
