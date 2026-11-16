@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
+import studio.vyra.app.repository.PatchArtifactDownloader
 import studio.vyra.app.repository.PatchCompatibility
 import studio.vyra.app.repository.PatchEntry
 import studio.vyra.app.repository.PatchRepository
@@ -428,6 +429,11 @@ private fun SourcesScreen(padding: PaddingValues) {
 
 @Composable
 private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var downloadingPatchId by remember { mutableStateOf<String?>(null) }
+    var downloadStatus by remember { mutableStateOf<String?>(null) }
+
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(repository.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -439,6 +445,31 @@ private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
                     Text(patch.name, fontWeight = FontWeight.Medium)
                     Text("${patch.targetPackage} · ${patch.format.uppercase()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("SHA-256: ${patch.artifactSha256}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(
+                        onClick = {
+                            downloadingPatchId = patch.id
+                            downloadStatus = null
+                            scope.launch {
+                                try {
+                                    val file = withContext(Dispatchers.IO) {
+                                        PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                    }
+                                    downloadStatus = "Verified and saved in app cache: ${file.name}"
+                                } catch (error: Exception) {
+                                    downloadStatus = error.message ?: "Patch download failed."
+                                } finally {
+                                    downloadingPatchId = null
+                                }
+                            }
+                        },
+                        enabled = downloadingPatchId == null,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(if (downloadingPatchId == patch.id) "Downloading…" else "Download & verify")
+                    }
+                    if (downloadStatus != null) {
+                        Text(downloadStatus!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
