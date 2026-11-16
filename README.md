@@ -55,3 +55,9 @@ The GitHub Actions workflow is defined at `.github/workflows/android-ci.yml`. A 
 Only use APKs you are authorized to modify. VYRA does not distribute proprietary APKs. External patch sources must be treated as untrusted until reviewed and explicitly added by the user.
 
 Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional Section 7 conditions. No upstream engine or patch implementation is included in this application shell. Any future reuse must preserve notices and comply with the applicable license terms.
+
+
+## Current repository workflow
+VYRA can add HTTPS v1 repository indexes, retain source URLs locally, list patch metadata, and compare patch targets with an inspected APK. A user can explicitly download an MPP artifact; the app verifies its SHA-256 digest before retaining it in its private cache. Downloads are size-limited and redirects are rejected.
+
+**Not implemented yet:** applying patches, executing patch payloads, rebuilding/signing APKs, or exporting patched applications. A verified download is not a successful patch build.
