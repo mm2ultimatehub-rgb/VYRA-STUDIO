@@ -5,7 +5,7 @@
 - [x] Record initial product scope.
 - [x] Research Morphe patch formats, engine capabilities, and license conditions.
 - [x] Decide Android-first native architecture.
-- [ ] Complete detailed upstream dependency and runtime compatibility review.
+- [ ] Complete detailed upstream dependency and runtime compatibility review (GPL obligations reviewed at a high level; runtime integration decision and device validation remain open).
 
 ## Phase 1 — Android application shell
 - [x] Commit native Android project skeleton and navigation shell.
@@ -22,9 +22,9 @@
 - [x] Implement JSON parser and schema validation.
 - [x] Validate package names, version bounds, HTTPS artifact URLs, SHA-256 values, and supported bundle format.
 - [x] Implement package/version-code compatibility matching.
-- [ ] Implement remote repository refresh and validation.
+- [x] Implement remote repository refresh and validation.
 - [ ] Add source trust prompts and provenance display.
-- [ ] Show patch metadata and compatibility in the Store/Patcher screens.
+- [x] Show patch metadata and compatibility in the Store/Patcher screens.
 
 ## Phase 3 — APK inspection and patch pipeline
 - [x] Import APKs using Android's Storage Access Framework.
