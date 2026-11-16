@@ -14,7 +14,7 @@
 - [x] Add APK document picker.
 - [x] Add APK package metadata and SHA-256 signer/file fingerprint inspection.
 - [x] Add GitHub Actions workflow for unit tests and debug APK packaging.
-- [ ] Add Gradle wrapper and verify a clean Android build in CI.
+- [x] Verify unit tests and clean debug APK packaging in GitHub Actions (run #58, 2026-11-16).
 - [ ] Add instrumentation tests.
 
 ## Phase 2 — Repository and patch catalog
