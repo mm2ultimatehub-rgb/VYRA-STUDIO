@@ -44,3 +44,12 @@ For the first milestone, implement the UI and typed contracts only. Do not vendo
 - Morphe Manager patch sources: https://github.com/MorpheApp/morphe-manager/blob/main/docs/patch-sources.md
 - Morphe Desktop documentation: https://github.com/MorpheApp/morphe-desktop/blob/main/docs/documentation.md
 - Morphe patch template: https://github.com/MorpheApp/morphe-patches-template
+
+
+## YouTube test target finding (2026-11-17)
+
+The current Morphe Patches README lists YouTube 21.30.216 among the supported versions for its YouTube patch collection and lists 118 YouTube patches in that section. This matches the version in the user's supplied APK filename. This is collection-level compatibility evidence only; it does not guarantee every patch is compatible with every APK build or signing certificate. See [YouTube test plan](YOUTUBE-TEST-PLAN.md).
+
+The Patches NOTICE was inspected directly. It requires preservation of the notice for derivative works, clear identification of modified versions to avoid origin confusion, and states that the GPL license grants no trademark permission for the Morphe name or marks.
+
+The upstream patch documentation says patches may modify DEX bytecode, decoded resources/resource tables, and arbitrary APK files. It also describes patch dependencies and lazy decoding. This confirms that a real patch engine is a substantial APK transformation subsystem, not just a bundle downloader.
