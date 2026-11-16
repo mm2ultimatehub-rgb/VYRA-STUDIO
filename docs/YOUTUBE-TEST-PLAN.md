@@ -65,3 +65,14 @@ Sources:
 Implemented: APK selection/inspection, repository index parsing, package/version compatibility filtering, HTTPS artifact download, SHA-256 verification, and app-private artifact storage.
 
 Not implemented yet: execution of `.mpp` bundles, DEX/resource rewriting, APK rebuilding, APK signing, and installation/export of a patched APK.
+
+## Published upstream bundle candidate
+
+The GitHub Releases API currently identifies Morphe Patches `v2.3.0` (published 2026-11-16) and exposes the asset `patches-2.3.0.mpp`:
+
+- Size: 16,663,050 bytes
+- Published SHA-256: `1c37549274a2b6cf7f2e3e099d9b8cb641880b8a7dac323a95638a06bb4509a9`
+- Official release: https://github.com/MorpheApp/morphe-patches/releases/tag/v2.3.0
+- Asset: https://github.com/MorpheApp/morphe-patches/releases/download/v2.3.0/patches-2.3.0.mpp
+
+The bundle is smaller than VYRA's current 50 MB artifact-download limit and its published digest can be used for an integrity check. The bundle has not been downloaded or executed by VYRA in this research step. Its release asset is a multi-app patch collection, so it must not be misrepresented as a single YouTube-only patch. Runtime support and licensing still need review before use.
