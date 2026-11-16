@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import studio.vyra.app.apk.ApkInspection
+import studio.vyra.app.apk.ApkInspector
 import studio.vyra.app.ui.theme.VyraTheme
 
 class MainActivity : ComponentActivity() {
@@ -282,8 +286,26 @@ private fun PatcherScreen(
     selectedApk: Uri?,
     onChooseApk: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
+    var inspectionError by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var isInspecting by remember(selectedApk) { mutableStateOf(false) }
+
+    LaunchedEffect(selectedApk) {
+        val uri = selectedApk ?: return@LaunchedEffect
+        isInspecting = true
+        inspectionError = null
+        try {
+            inspection = ApkInspector(context).inspect(uri)
+        } catch (error: Exception) {
+            inspectionError = error.message ?: "APK inspection failed."
+        } finally {
+            isInspecting = false
+        }
+    }
+
     PageColumn(padding) {
-        PageHeading("APK Patcher", "Prepare an app package for a guided patching workflow.")
+        PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
         InfoCard(
             title = "1. Choose your APK",
             body = selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.",
@@ -295,15 +317,43 @@ private fun PatcherScreen(
         ) {
             Text(if (selectedApk == null) "Choose APK file" else "Choose another APK")
         }
+        when {
+            isInspecting -> InfoCard(
+                title = "Inspecting APK",
+                body = "Reading package metadata and calculating SHA-256 fingerprints…",
+            )
+            inspectionError != null -> InfoCard(
+                title = "Inspection failed",
+                body = inspectionError ?: "Unknown inspection error.",
+            )
+            inspection != null -> ApkDetailsCard(inspection!!)
+        }
         InfoCard(
-            title = "2. Inspect and match",
-            body = "Package details, signing certificate, and compatible patches will be checked in a later milestone.",
+            title = "2. Compatibility",
+            body = "Patch compatibility matching is the next milestone. No patch is applied during inspection.",
         )
         InfoCard(
             title = "3. Build and export",
-            body = "The patch engine is not connected yet. No APK is modified or generated in this preview.",
+            body = "The patch engine is not connected yet. This version does not modify or generate APK files.",
         )
     }
+}
+
+@Composable
+private fun ApkDetailsCard(info: ApkInspection) {
+    InfoCard(
+        title = "APK inspection complete",
+        body = buildString {
+            appendLine("App: ${info.appLabel}")
+            appendLine("Package: ${info.packageName}")
+            appendLine("Version: ${info.versionName ?: "Unknown"} (${info.versionCode})")
+            appendLine("Minimum SDK: ${info.minSdk ?: "Unknown"}")
+            appendLine("Target SDK: ${info.targetSdk ?: "Unknown"}")
+            appendLine("APK SHA-256: ${info.apkSha256}")
+            append("Signer SHA-256: ")
+            append(if (info.signerSha256.isEmpty()) "Not available" else info.signerSha256.joinToString())
+        },
+    )
 }
 
 @Composable
