@@ -30,11 +30,13 @@ import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,8 +56,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
+import studio.vyra.app.repository.PatchRepository
+import studio.vyra.app.repository.RepositoryClient
+import studio.vyra.app.repository.RepositorySourceStore
 import studio.vyra.app.ui.theme.VyraTheme
 
 class MainActivity : ComponentActivity() {
@@ -117,9 +126,7 @@ private fun VyraApp() {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 VyraTab.entries.filter { it != VyraTab.CREATOR }.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
@@ -174,90 +181,33 @@ private fun OverviewScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Text(
-                text = "Your workspace,\nwithout the clutter.",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
+            Text("Your workspace,\nwithout the clutter.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Discover patches, prepare builds, and keep every source in one place.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text("Discover patches, prepare builds, and keep every source in one place.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(18.dp),
-            ) {
+            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Surface(
-                        modifier = Modifier.size(42.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                    ) {
-                        BoxCenter {
-                            Text("V", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                        }
+                    Surface(modifier = Modifier.size(42.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                        BoxCenter { Text("V", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) }
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Early access", fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "The workspace is taking shape.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Text("The workspace is taking shape.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
-        item {
-            Text("Quick actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        }
-        item {
-            ActionCard(
-                title = "Explore the Vyra Store",
-                description = "Browse patch collections and release information.",
-                action = "Open store",
-                onClick = onOpenStore,
-            )
-        }
-        item {
-            ActionCard(
-                title = "Start a patching session",
-                description = "Choose an APK you are authorized to modify.",
-                action = "Open patcher",
-                onClick = onOpenPatcher,
-            )
-        }
-        item {
-            ActionCard(
-                title = "Create a patch collection",
-                description = "Prepare your own patch pack and metadata.",
-                action = "Open creator",
-                onClick = onOpenCreator,
-            )
-        }
-        item {
-            ActionCard(
-                title = "Manage patch sources",
-                description = "Review repositories and their provenance.",
-                action = "View sources",
-                onClick = onOpenSources,
-            )
-        }
-        item {
-            Text(
-                text = "No builds yet",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        item { Text("Quick actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
+        item { ActionCard("Explore the Vyra Store", "Browse patch collections and release information.", "Open store", onOpenStore) }
+        item { ActionCard("Start a patching session", "Choose an APK you are authorized to modify.", "Open patcher", onOpenPatcher) }
+        item { ActionCard("Create a patch collection", "Prepare your own patch pack and metadata.", "Open creator", onOpenCreator) }
+        item { ActionCard("Manage patch sources", "Review repositories and their provenance.", "View sources", onOpenSources) }
+        item { Text("No builds yet", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -265,27 +215,14 @@ private fun OverviewScreen(
 private fun StoreScreen(padding: PaddingValues) {
     PageColumn(padding) {
         PageHeading("Vyra Store", "A home for community patch collections.")
-        InfoCard(
-            title = "Patch catalog",
-            body = "Patch collections will appear here with supported apps, versions, changelogs, and requirements.",
-        )
-        InfoCard(
-            title = "Compatibility first",
-            body = "Each patch will show its target app and supported versions before you start a build.",
-        )
-        InfoCard(
-            title = "Sources you control",
-            body = "Only add repositories you trust. External sources will always require your confirmation.",
-        )
+        InfoCard("Patch catalog", "Patch collections will appear here with supported apps, versions, changelogs, and requirements.")
+        InfoCard("Compatibility first", "Each patch will show its target app and supported versions before you start a build.")
+        InfoCard("Sources you control", "Only add repositories you trust. External sources will always require your confirmation.")
     }
 }
 
 @Composable
-private fun PatcherScreen(
-    padding: PaddingValues,
-    selectedApk: Uri?,
-    onChooseApk: () -> Unit,
-) {
+private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk: () -> Unit) {
     val context = LocalContext.current
     var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
     var inspectionError by remember(selectedApk) { mutableStateOf<String?>(null) }
@@ -296,7 +233,7 @@ private fun PatcherScreen(
         isInspecting = true
         inspectionError = null
         try {
-            inspection = ApkInspector(context).inspect(uri)
+            inspection = withContext(Dispatchers.IO) { ApkInspector(context).inspect(uri) }
         } catch (error: Exception) {
             inspectionError = error.message ?: "APK inspection failed."
         } finally {
@@ -306,36 +243,17 @@ private fun PatcherScreen(
 
     PageColumn(padding) {
         PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
-        InfoCard(
-            title = "1. Choose your APK",
-            body = selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.",
-        )
-        Button(
-            onClick = onChooseApk,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-        ) {
+        InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
+        Button(onClick = onChooseApk, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
             Text(if (selectedApk == null) "Choose APK file" else "Choose another APK")
         }
         when {
-            isInspecting -> InfoCard(
-                title = "Inspecting APK",
-                body = "Reading package metadata and calculating SHA-256 fingerprints…",
-            )
-            inspectionError != null -> InfoCard(
-                title = "Inspection failed",
-                body = inspectionError ?: "Unknown inspection error.",
-            )
+            isInspecting -> InfoCard("Inspecting APK", "Reading package metadata and calculating SHA-256 fingerprints…")
+            inspectionError != null -> InfoCard("Inspection failed", inspectionError ?: "Unknown inspection error.")
             inspection != null -> ApkDetailsCard(inspection!!)
         }
-        InfoCard(
-            title = "2. Compatibility",
-            body = "Patch compatibility matching is the next milestone. No patch is applied during inspection.",
-        )
-        InfoCard(
-            title = "3. Build and export",
-            body = "The patch engine is not connected yet. This version does not modify or generate APK files.",
-        )
+        InfoCard("2. Compatibility", "Repository patches can now be checked against the selected app's package and version. No patch is applied during inspection.")
+        InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
     }
 }
 
@@ -360,29 +278,123 @@ private fun ApkDetailsCard(info: ApkInspection) {
 private fun CreatorScreen(padding: PaddingValues) {
     PageColumn(padding) {
         PageHeading("Patch Creator", "Design and validate your own patch collection.")
-        InfoCard(
-            title = "Manifest workspace",
-            body = "Create a collection name, version, description, target apps, and compatibility rules.",
-        )
-        InfoCard(
-            title = "Validation",
-            body = "Manifest checks and patch packaging will be added before the creator can export a release.",
-        )
-        InfoCard(
-            title = "No code execution yet",
-            body = "This screen is a product shell. It does not compile or execute patch code.",
-        )
+        InfoCard("Manifest workspace", "Create a collection name, version, description, target apps, and compatibility rules.")
+        InfoCard("Validation", "Manifest checks and patch packaging will be added before the creator can export a release.")
+        InfoCard("No code execution yet", "This screen is a product shell. It does not compile or execute patch code.")
     }
 }
 
 @Composable
 private fun SourcesScreen(padding: PaddingValues) {
+    val context = LocalContext.current
+    val store = remember(context) { RepositorySourceStore(context) }
+    val client = remember { RepositoryClient() }
+    val scope = rememberCoroutineScope()
+    var url by remember { mutableStateOf("") }
+    var sources by remember { mutableStateOf<List<Pair<String, PatchRepository>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+
+    fun refreshAll() {
+        scope.launch {
+            isLoading = true
+            status = null
+            val urls = withContext(Dispatchers.IO) { store.getUrls() }
+            val loaded = mutableListOf<Pair<String, PatchRepository>>()
+            val failures = mutableListOf<String>()
+            for (sourceUrl in urls) {
+                try {
+                    val repository = withContext(Dispatchers.IO) { client.fetch(sourceUrl) }
+                    loaded += sourceUrl to repository
+                } catch (error: Exception) {
+                    failures += "${sourceUrl}: ${error.message ?: "Refresh failed"}"
+                }
+            }
+            sources = loaded
+            status = if (failures.isEmpty()) {
+                if (loaded.isEmpty()) "No saved repositories yet." else "Updated ${loaded.size} source(s)."
+            } else {
+                failures.joinToString("\n")
+            }
+            isLoading = false
+        }
+    }
+
+    LaunchedEffect(Unit) { refreshAll() }
+
     PageColumn(padding) {
-        PageHeading("Repositories", "Keep your patch sources organized and transparent.")
-        InfoCard(
-            title = "No sources added",
-            body = "Add a repository when the source format and trust checks are ready. New sources will never run silently.",
+        PageHeading("Repositories", "Add an HTTPS repository index and inspect its patch catalog.")
+        InfoCard("Source safety", "Only repository metadata is fetched. Patch files are not downloaded or executed. Adding a source does not mean it is trusted.")
+        OutlinedTextField(
+            value = url,
+            onValueChange = { url = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Repository index URL") },
+            placeholder = { Text("https://example.com/vyra/index.json") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
         )
+        Button(
+            onClick = {
+                val candidate = url.trim()
+                scope.launch {
+                    isLoading = true
+                    status = null
+                    try {
+                        val repository = withContext(Dispatchers.IO) { client.fetch(candidate) }
+                        withContext(Dispatchers.IO) { store.addUrl(candidate) }
+                        sources = (sources.filterNot { it.first == candidate } + (candidate to repository))
+                        url = ""
+                        status = "Added ${repository.name} — ${repository.patches.size} patch(es)."
+                    } catch (error: Exception) {
+                        status = error.message ?: "Could not add repository."
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+            enabled = !isLoading && url.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) { Text("Validate and add source") }
+        Button(
+            onClick = { refreshAll() },
+            enabled = !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) { Text("Refresh saved sources") }
+        if (isLoading) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text("Fetching repository indexes…", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        status?.let { InfoCard("Source status", it) }
+        if (sources.isEmpty() && !isLoading) {
+            InfoCard("No sources added", "Paste a direct HTTPS URL to a repository index that follows the Vyra Repository Index v1 format.")
+        }
+        sources.forEach { (sourceUrl, repository) ->
+            RepositoryCard(sourceUrl, repository)
+        }
+    }
+}
+
+@Composable
+private fun RepositoryCard(sourceUrl: String, repository: PatchRepository) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(repository.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(repository.description.ifBlank { "No repository description provided." }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(sourceUrl, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Text("${repository.patches.size} patch(es)", style = MaterialTheme.typography.labelMedium)
+            repository.patches.forEach { patch ->
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(patch.name, fontWeight = FontWeight.Medium)
+                    Text("${patch.targetPackage} · ${patch.format.uppercase()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("SHA-256: ${patch.artifactSha256}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }
 
@@ -390,29 +402,20 @@ private fun SourcesScreen(padding: PaddingValues) {
 private fun BuildsScreen(padding: PaddingValues) {
     PageColumn(padding) {
         PageHeading("Build center", "Follow every build from start to exported artifact.")
-        InfoCard(
-            title = "No build history",
-            body = "Your completed builds, validation results, and logs will be listed here.",
-        )
+        InfoCard("No build history", "Your completed builds, validation results, and logs will be listed here.")
     }
 }
 
 @Composable
-private fun PageColumn(
-    padding: PaddingValues,
-    content: @Composable ColumnScope.() -> Unit,
-) {
+private fun PageColumn(padding: PaddingValues, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(
-            start = 20.dp,
-            end = 20.dp,
+            start = 20.dp, end = 20.dp,
             top = padding.calculateTopPadding() + 20.dp,
             bottom = padding.calculateBottomPadding() + 20.dp,
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        content()
-    }
+    ) { content() }
 }
 
 @Composable
@@ -425,14 +428,8 @@ private fun PageHeading(title: String, subtitle: String) {
 
 @Composable
 private fun InfoCard(title: String, body: String) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(18.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -440,17 +437,8 @@ private fun InfoCard(title: String, body: String) {
 }
 
 @Composable
-private fun ActionCard(
-    title: String,
-    description: String,
-    action: String,
-    onClick: () -> Unit,
-) {
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(18.dp),
-    ) {
+private fun ActionCard(title: String, description: String, action: String, onClick: () -> Unit) {
+    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -467,9 +455,7 @@ private fun ActionCard(
 
 @Composable
 private fun BoxCenter(content: @Composable () -> Unit) {
-    androidx.compose.foundation.layout.Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-        content = { content() },
-    )
+    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        content()
+    }
 }
