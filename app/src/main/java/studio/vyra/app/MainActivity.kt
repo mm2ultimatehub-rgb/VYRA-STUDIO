@@ -500,10 +500,17 @@ private fun RepositoryCard(
                             downloadingPatchId = patch.id
                             scope.launch {
                                 try {
-                                    val file = withContext(Dispatchers.IO) {
-                                        PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                    val (file, metadata) = withContext(Dispatchers.IO) {
+                                        val verifiedFile = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                        val bundleMetadata = MppBundleInspector().inspect(verifiedFile)
+                                        verifiedFile to bundleMetadata
                                     }
-                                    downloadStatuses = downloadStatuses + (patch.id to "Verified and saved in app cache: ${file.name}")
+                                    val bundleName = metadata.name ?: file.name
+                                    val bundleVersion = metadata.version?.let { " v$it" }.orEmpty()
+                                    val patcherVersion = metadata.patcherVersion?.let { " · Patcher $it" }.orEmpty()
+                                    downloadStatuses = downloadStatuses + (
+                                        patch.id to "SHA-256 verified · MPP structure valid: $bundleName$bundleVersion · ${metadata.dexEntryCount} DEX entr(y/ies)$patcherVersion"
+                                    )
                                 } catch (error: Exception) {
                                     downloadStatuses = downloadStatuses + (patch.id to (error.message ?: "Patch download failed."))
                                 } finally {
