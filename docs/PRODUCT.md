@@ -7,7 +7,7 @@ VYRA STUDIO is an independent workspace for discovering, managing, creating, and
 - **Vyra Store:** browse patch collections, versions, changelogs, requirements, and compatibility.
 - **Vyra Patcher:** import an APK supplied by the user, inspect it, select compatible patches, run a transparent build pipeline, and export the result.
 - **Vyra Creator:** create and validate patch manifests, dependencies, conflicts, and release packages.
-- **Repositories:** add, refresh, and validate trusted patch sources.
+- **Repositories:** add, refresh, and validate HTTPS repository indexes; source URLs are stored locally and catalog metadata is checked before use.
 - **Build Center:** view build progress, logs, validation results, and exported artifacts.
 
 ## UX principles
