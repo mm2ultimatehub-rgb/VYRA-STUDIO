@@ -24,13 +24,13 @@ class RepositorySourceStore(context: Context) {
         require(normalized.isNotEmpty()) { "Repository URL cannot be empty." }
         val updated = (getUrls().filterNot { it == normalized } + normalized).takeLast(MAX_SOURCES)
         val array = JSONArray()
-        updated.forEach(array::put)
+        updated.forEach { array.put(it) }
         preferences.edit().putString(KEY_URLS, array.toString()).apply()
     }
 
     fun removeUrl(url: String) {
         val array = JSONArray()
-        getUrls().filterNot { it == url }.forEach(array::put)
+        getUrls().filterNot { it == url }.forEach { array.put(it) }
         preferences.edit().putString(KEY_URLS, array.toString()).apply()
     }
 
