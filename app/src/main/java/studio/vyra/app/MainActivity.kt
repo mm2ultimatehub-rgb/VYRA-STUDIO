@@ -66,6 +66,7 @@ import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
 import studio.vyra.app.repository.PatchArtifactDownloader
 import studio.vyra.app.repository.PatchCompatibility
+import studio.vyra.app.repository.MppBundleInspector
 import studio.vyra.app.repository.PatchEntry
 import studio.vyra.app.repository.PatchRepository
 import studio.vyra.app.repository.RepositoryClient
