@@ -2,23 +2,24 @@
 
 An independent Android workspace for patch discovery, repository management, APK inspection, patch creation, and build orchestration.
 
-## Project status
+## Current milestone
 
-The repository now contains the first native Android application shell built with Kotlin and Jetpack Compose.
+The native Android shell is built with Kotlin and Jetpack Compose.
 
-Implemented in this milestone:
-- Dark-first Material 3 interface.
-- Overview, Store, Patcher, Sources, and Builds destinations.
-- Patch Creator entry from the overview.
-- Android document picker for selecting a user-provided APK.
+Implemented:
+- Dark-first Material 3 application shell.
+- Overview, Store, Patcher, Creator, Sources, and Builds screens.
+- Android document picker for user-selected APK files.
+- Background APK inspection: package name, app label, version, min/target SDK, APK SHA-256, and signer certificate SHA-256 fingerprints.
+- GitHub Actions workflow that attempts a debug APK build on pushes and pull requests to `main`.
 
-Not implemented yet:
-- APK metadata/signature inspection.
-- Patch repository network refresh.
+Not implemented:
+- Patch catalog/repository network refresh.
+- Compatibility matching against patch metadata.
 - Patch-engine integration.
-- Actual APK modification, signing, or export.
+- APK modification, re-signing, or patched APK export.
 
-The current APK picker is only an import UI. It does not patch or alter the selected file.
+APK inspection copies the selected file to the app's private cache temporarily, reads package metadata, computes fingerprints, and deletes the temporary copy. It does not modify the selected APK.
 
 ## Build
 
@@ -27,19 +28,15 @@ Requirements:
 - Android SDK Platform 36 and Build Tools 36.0.0
 - Gradle 8.13
 
-From the repository root:
+Run from the repository root:
 
 ```bash
 gradle assembleDebug
 ```
 
-The debug APK is written to:
+Output: `app/build/outputs/apk/debug/app-debug.apk`.
 
-```
-app/build/outputs/apk/debug/app-debug.apk
-```
-
-GitHub Actions runs the same debug build on pushes and pull requests to `main`, then publishes the APK as a workflow artifact when the build succeeds.
+The GitHub Actions workflow is defined at `.github/workflows/android-ci.yml`. A configured workflow is not proof of a successful build; check the repository's Actions tab for the latest run.
 
 ## Architecture and research
 
@@ -53,4 +50,4 @@ GitHub Actions runs the same debug build on pushes and pull requests to `main`, 
 
 Only use APKs you are authorized to modify. VYRA does not distribute proprietary APKs. External patch sources must be treated as executable code and reviewed before use.
 
-Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional Section 7 conditions. No upstream engine or patch implementation is included in this initial application shell. Any future reuse must preserve notices and comply with the applicable license terms.
+Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional Section 7 conditions. No upstream engine or patch implementation is included in this application shell. Any future reuse must preserve notices and comply with the applicable license terms.
