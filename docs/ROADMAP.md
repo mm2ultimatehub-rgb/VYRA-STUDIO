@@ -13,27 +13,30 @@
 - [x] Add Store, Patcher, Creator, Repositories, and Builds destinations.
 - [x] Add APK document picker.
 - [x] Add APK package metadata and SHA-256 signer/file fingerprint inspection.
-- [x] Add GitHub Actions debug build workflow.
+- [x] Add GitHub Actions workflow for unit tests and debug APK packaging.
 - [ ] Add Gradle wrapper and verify a clean Android build in CI.
-- [ ] Add automated unit and instrumentation tests.
+- [ ] Add instrumentation tests.
 
 ## Phase 2 — Repository and patch catalog
-- [x] Define repository index format v1 and validation rules.
-- [ ] Implement repository refresh and validation.
-- [ ] Implement patch metadata, detail pages, and compatibility display.
+- [x] Define repository index format v1.
+- [x] Implement JSON parser and schema validation.
+- [x] Validate package names, version bounds, HTTPS artifact URLs, SHA-256 values, and supported bundle format.
+- [x] Implement package/version-code compatibility matching.
+- [ ] Implement remote repository refresh and validation.
 - [ ] Add source trust prompts and provenance display.
+- [ ] Show patch metadata and compatibility in the Store/Patcher screens.
 
 ## Phase 3 — APK inspection and patch pipeline
 - [x] Import APKs using Android's Storage Access Framework.
 - [x] Inspect package metadata and signing-certificate fingerprints.
-- [ ] Implement compatibility and dependency checks.
+- [ ] Add dependency and conflict checks.
 - [ ] Select and integrate a patch engine after license/runtime review.
 - [ ] Add build logs, validation, and artifact export.
 
 ## Phase 4 — Creator and release quality
 - [ ] Add patch authoring and manifest validation.
 - [ ] Add package integrity checks and signing guidance.
-- [ ] Add tests, documentation, and release automation.
+- [ ] Add release automation.
 
 ## Later
 - [ ] Evaluate a desktop companion after Android workflow validation.
