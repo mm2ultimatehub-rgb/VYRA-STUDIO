@@ -6,9 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import studio.vyra.app.ui.theme.VyraTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +71,7 @@ private enum class VyraTab(
     OVERVIEW("Overview", Icons.Filled.Home),
     STORE("Store", Icons.Filled.Store),
     PATCHER("Patcher", Icons.Filled.Build),
+    CREATOR("Creator", Icons.Filled.Edit),
     SOURCES("Sources", Icons.Filled.Folder),
     BUILDS("Builds", Icons.Filled.History),
 }
@@ -94,13 +97,13 @@ private fun VyraApp() {
                             text = "VYRA STUDIO",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.5.dp.value.let { androidx.compose.ui.unit.sp(it) },
+                            letterSpacing = 1.5.sp,
                         )
                         Text(
                             text = "ANDROID PATCH WORKSPACE",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 1.2.dp.value.let { androidx.compose.ui.unit.sp(it) },
+                            letterSpacing = 1.2.sp,
                         )
                     }
                 },
@@ -113,7 +116,7 @@ private fun VyraApp() {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
             ) {
-                VyraTab.entries.forEach { tab ->
+                VyraTab.entries.filter { it != VyraTab.CREATOR }.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
@@ -130,9 +133,11 @@ private fun VyraApp() {
                 padding = innerPadding,
                 onOpenStore = { selectedTab = VyraTab.STORE },
                 onOpenPatcher = { selectedTab = VyraTab.PATCHER },
+                onOpenCreator = { selectedTab = VyraTab.CREATOR },
                 onOpenSources = { selectedTab = VyraTab.SOURCES },
             )
             VyraTab.STORE -> StoreScreen(innerPadding)
+            VyraTab.CREATOR -> CreatorScreen(innerPadding)
             VyraTab.PATCHER -> PatcherScreen(
                 padding = innerPadding,
                 selectedApk = selectedApk,
@@ -151,6 +156,7 @@ private fun OverviewScreen(
     padding: PaddingValues,
     onOpenStore: () -> Unit,
     onOpenPatcher: () -> Unit,
+    onOpenCreator: () -> Unit,
     onOpenSources: () -> Unit,
 ) {
     LazyColumn(
@@ -227,6 +233,14 @@ private fun OverviewScreen(
         }
         item {
             ActionCard(
+                title = "Create a patch collection",
+                description = "Prepare your own patch pack and metadata.",
+                action = "Open creator",
+                onClick = onOpenCreator,
+            )
+        }
+        item {
+            ActionCard(
                 title = "Manage patch sources",
                 description = "Review repositories and their provenance.",
                 action = "View sources",
@@ -293,6 +307,25 @@ private fun PatcherScreen(
 }
 
 @Composable
+private fun CreatorScreen(padding: PaddingValues) {
+    PageColumn(padding) {
+        PageHeading("Patch Creator", "Design and validate your own patch collection.")
+        InfoCard(
+            title = "Manifest workspace",
+            body = "Create a collection name, version, description, target apps, and compatibility rules.",
+        )
+        InfoCard(
+            title = "Validation",
+            body = "Manifest checks and patch packaging will be added before the creator can export a release.",
+        )
+        InfoCard(
+            title = "No code execution yet",
+            body = "This screen is a product shell. It does not compile or execute patch code.",
+        )
+    }
+}
+
+@Composable
 private fun SourcesScreen(padding: PaddingValues) {
     PageColumn(padding) {
         PageHeading("Repositories", "Keep your patch sources organized and transparent.")
@@ -317,7 +350,7 @@ private fun BuildsScreen(padding: PaddingValues) {
 @Composable
 private fun PageColumn(
     padding: PaddingValues,
-    content: @Composable Column.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(
