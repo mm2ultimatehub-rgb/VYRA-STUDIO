@@ -28,7 +28,7 @@ Inspection is read-only. It does not validate patch compatibility, modify APK co
 
 Repository indexes are declarative JSON. The parser validates schema version, IDs, target package names, version-code bounds, HTTPS artifact URLs, SHA-256 digests, and the supported `.mpp` artifact format. It never executes patch code.
 
-Compatibility matching currently checks target package name and optional minimum/maximum version codes. Remote fetching, user trust prompts, artifact downloading, and digest verification at download time are still pending.
+Compatibility matching currently checks target package name and optional minimum/maximum version codes. Remote fetching, user trust prompts, artifact downloading, and digest verification at download time are implemented.
 
 See [Repository index format v1](REPOSITORY-INDEX-V1.md).
 
@@ -36,7 +36,7 @@ See [Repository index format v1](REPOSITORY-INDEX-V1.md).
 
 The UI must not depend on a specific patch engine. Keep an adapter boundary in the patching layer.
 
-Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Section 7 conditions. No upstream implementation is integrated. See [upstream research](UPSTREAM-RESEARCH.md) and upstream LICENSE/NOTICE files before reuse.
+Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Section 7 conditions. No upstream implementation is integrated. See [upstream research](UPSTREAM-RESEARCH.md), [engine integration research](ENGINE-INTEGRATION-RESEARCH.md), and upstream LICENSE/NOTICE files before reuse. The Android integration research found that Morphe Manager uses a dedicated patcher host, a host JAR, process isolation, and embedded HotSpot JVM runtimes for supported ABIs (with an ART host path as well). A simple Maven dependency is not a complete Android patching implementation. VYRA must first implement non-executing MPP inspection and decide its runtime architecture.
 
 ## Runtime and security constraints
 
@@ -60,6 +60,7 @@ Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Sec
 - Connections use bounded connect/read timeouts and a 1 MB response limit.
 - Repository metadata is parsed with the v1 schema validator; patch artifacts are not fetched or executed during source refresh.
 - User-added source URLs are stored in app-private preferences (up to 30 sources).
+- New sources are validated and presented for an explicit trust confirmation before they are saved; saved sources can be removed from the Sources screen.
 - APK compatibility is matched locally using package name and optional version-code bounds.
 - Patch artifacts are downloaded only after an explicit user action, over HTTPS, with redirects disabled and a 50 MB cap.
 - The downloaded artifact is SHA-256 checked against repository metadata before it is kept in the app-private cache; failed integrity checks discard the temporary file.
