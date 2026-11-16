@@ -31,6 +31,7 @@
 - [x] Inspect package metadata and signing-certificate fingerprints.
 - [ ] Add dependency and conflict checks.
 - [ ] Select and integrate a patch engine after license/runtime review.
+- [x] Inspect downloaded MPP JAR manifests and DEX entry structure without loading or executing patch code.
 - [ ] Add build logs, validation, and artifact export.
 
 ## Phase 4 — Creator and release quality
