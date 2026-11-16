@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -454,7 +456,7 @@ private fun BuildsScreen(padding: PaddingValues) {
 @Composable
 private fun PageColumn(padding: PaddingValues, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
             start = 20.dp, end = 20.dp,
             top = padding.calculateTopPadding() + 20.dp,
             bottom = padding.calculateBottomPadding() + 20.dp,
