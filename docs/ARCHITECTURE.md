@@ -1,34 +1,46 @@
-# VYRA STUDIO — Initial Architecture
+# VYRA STUDIO — Architecture
 
-This is a proposal, not a finalized framework decision.
+## Current decision
 
-## Candidate platform
-Kotlin Multiplatform with Compose Multiplatform is the leading candidate for shared application logic and UI across Android and desktop.
+The MVP is **Android-first and native**: Kotlin, Jetpack Compose, Material 3, and Android Gradle Plugin. See [ADR 0001](decisions/0001-android-first.md) for the rationale.
 
-## Proposed modules
+Desktop is deferred until the Android workflow is validated. Shared domain contracts can be extracted later if a desktop client becomes worthwhile.
+
+## Modules and boundaries
+
+- `app`: Android entry point, navigation, lifecycle, and dependency wiring.
 - `core:model`: app, patch, repository, and build domain models.
-- `core:compatibility`: version, dependency, and conflict checks.
-- `core:repository`: repository index parsing and validation.
-- `core:patching`: patch pipeline interfaces and orchestration.
-- `core:security`: hashes, signature inspection, and secret handling.
+- `core:compatibility`: target-app version, dependency, and conflict checks.
+- `core:repository`: repository index parsing, refresh, and validation.
+- `core:apk`: APK metadata and signing-certificate inspection.
+- `core:patching`: patch-engine interface, orchestration, progress, and cancellation.
 - `feature:store`: patch discovery and details.
 - `feature:patcher`: APK import, patch selection, and build flow.
 - `feature:creator`: patch authoring and validation.
 - `feature:repositories`: repository management.
-- `feature:builds`: build history, logs, and exports.
-- `app:android` and `app:desktop`: platform entry points.
+- `feature:builds`: build history, logs, validation, and exports.
 
-## Design constraints
-- Keep platform-specific APK operations behind interfaces.
+The first code milestone may keep these packages inside a single Android module. Split Gradle modules only when dependencies and build times justify it.
+
+## Patch engine
+
+The UI must not depend on a specific patch engine. Keep an adapter boundary in `core:patching`.
+
+Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Section 7 conditions. No upstream implementation is integrated yet. See [upstream research](UPSTREAM-RESEARCH.md) and the upstream LICENSE/NOTICE files before reuse.
+
+## Design and runtime constraints
+
+- Use a premium, uncluttered dark-first interface with accessible contrast.
+- Keep platform-specific APK operations behind clear interfaces.
 - Keep UI independent from patch-engine implementation details.
-- Make long-running builds observable and safely cancellable.
+- Run long operations away from the main thread; expose progress and safe cancellation.
 - Use deterministic, versioned patch manifests.
+- Treat patch sources as executable code: show provenance and require explicit trust decisions.
 - Store secrets outside source control and never log them.
+- Never distribute proprietary APKs or signing material.
 
-## Decisions to confirm
-1. Kotlin Multiplatform + Compose Multiplatform or another shared UI stack.
-2. Desktop targets: Windows first or Windows/macOS/Linux together.
-3. Integrate a compatible existing open-source patch engine or build a new engine.
+## Deferred decisions
 
-## License review
-Before adapting upstream code, inspect its exact license and obligations. Keep VYRA branding and code provenance distinct from upstream projects.
+1. Exact patch-engine integration after runtime and license validation.
+2. Desktop client only after the Android MVP proves the workflow.
+3. Remote build infrastructure only if on-device processing is not viable.
