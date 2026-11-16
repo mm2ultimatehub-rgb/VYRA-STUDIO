@@ -8,12 +8,14 @@
 - [ ] Complete detailed upstream dependency and runtime compatibility review.
 
 ## Phase 1 — Android application shell
-- [x] Commit Android project skeleton and first navigation shell.
-- [x] Establish dark-first design tokens and Material 3 theme.
-- [x] Add Store, Patcher, Creator, Repositories, and Builds navigation destinations.
-- [x] Add a GitHub Actions workflow for debug APK builds.
+- [x] Commit native Android project skeleton and navigation shell.
+- [x] Establish dark-first Material 3 theme.
+- [x] Add Store, Patcher, Creator, Repositories, and Builds destinations.
+- [x] Add APK document picker.
+- [x] Add APK package metadata and SHA-256 signer/file fingerprint inspection.
+- [x] Add GitHub Actions debug build workflow.
 - [ ] Add Gradle wrapper and verify a clean Android build in CI.
-- [ ] Add UI and domain unit tests.
+- [ ] Add automated unit and instrumentation tests.
 
 ## Phase 2 — Repository and patch catalog
 - [ ] Define a versioned repository index format.
@@ -22,8 +24,8 @@
 - [ ] Add source trust prompts and provenance display.
 
 ## Phase 3 — APK inspection and patch pipeline
-- [ ] Import APKs using Android's Storage Access Framework.
-- [ ] Inspect package metadata and signing certificates.
+- [x] Import APKs using Android's Storage Access Framework.
+- [x] Inspect package metadata and signing-certificate fingerprints.
 - [ ] Implement compatibility and dependency checks.
 - [ ] Select and integrate a patch engine after license/runtime review.
 - [ ] Add build logs, validation, and artifact export.
