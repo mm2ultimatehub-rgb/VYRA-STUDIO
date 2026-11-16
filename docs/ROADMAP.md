@@ -23,7 +23,7 @@
 - [x] Validate package names, version bounds, HTTPS artifact URLs, SHA-256 values, and supported bundle format.
 - [x] Implement package/version-code compatibility matching.
 - [x] Implement remote repository refresh and validation.
-- [ ] Add source trust prompts and provenance display.
+- [x] Add source trust prompts and provenance display.
 - [x] Show patch metadata and compatibility in the Store/Patcher screens.
 
 ## Phase 3 — APK inspection and patch pipeline
