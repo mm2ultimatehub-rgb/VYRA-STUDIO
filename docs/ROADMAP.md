@@ -18,7 +18,7 @@
 - [ ] Add automated unit and instrumentation tests.
 
 ## Phase 2 — Repository and patch catalog
-- [ ] Define a versioned repository index format.
+- [x] Define repository index format v1 and validation rules.
 - [ ] Implement repository refresh and validation.
 - [ ] Implement patch metadata, detail pages, and compatibility display.
 - [ ] Add source trust prompts and provenance display.
