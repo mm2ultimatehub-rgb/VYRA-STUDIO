@@ -34,7 +34,14 @@ class RepositoryIndexParser {
                         "minVersionCode cannot exceed maxVersionCode."
                     }
 
+                    val targetPackage = target.requiredString("packageName")
+                    require(PACKAGE_PATTERN.matches(targetPackage)) {
+                        "Target package name has an invalid format."
+                    }
+
                     val artifact = item.getJSONObject("artifact")
+                    val format = artifact.optString("format", "mpp")
+                    require(format == "mpp") { "Unsupported patch artifact format: $format" }
                     val artifactUrl = artifact.requiredString("url")
                     require(isHttpsUrl(artifactUrl)) { "Patch artifacts must use HTTPS URLs." }
                     val sha256 = artifact.requiredString("sha256").lowercase()
@@ -45,12 +52,12 @@ class RepositoryIndexParser {
                             id = patchId,
                             name = item.requiredString("name"),
                             description = item.optString("description", ""),
-                            targetPackage = target.requiredString("packageName"),
+                            targetPackage = targetPackage,
                             minVersionCode = minVersion,
                             maxVersionCode = maxVersion,
                             artifactUrl = artifactUrl,
                             artifactSha256 = sha256,
-                            format = artifact.optString("format", "mpp"),
+                            format = format,
                         ),
                     )
                 }
@@ -84,5 +91,6 @@ class RepositoryIndexParser {
     private companion object {
         val ID_PATTERN = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{1,79}")
         val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
+        val PACKAGE_PATTERN = Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")
     }
 }
