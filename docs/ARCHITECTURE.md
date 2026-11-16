@@ -53,3 +53,11 @@ Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional GPLv3 Sec
 1. Exact patch-engine integration after runtime and license validation.
 2. Desktop client after the Android MVP validates the workflow.
 3. Remote build infrastructure only if on-device processing is not viable.
+
+
+## Repository networking
+- Repository index requests require HTTPS and reject credentials, URL fragments, and redirects.
+- Connections use bounded connect/read timeouts and a 1 MB response limit.
+- Repository metadata is parsed with the v1 schema validator; patch artifacts are not fetched or executed during source refresh.
+- User-added source URLs are stored in app-private preferences (up to 30 sources).
+- APK compatibility is matched locally using package name and optional version-code bounds.
