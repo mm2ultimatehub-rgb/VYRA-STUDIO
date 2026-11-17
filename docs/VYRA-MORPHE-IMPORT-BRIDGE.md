@@ -26,7 +26,7 @@ This keeps the integration tied to the source revision that was inspected.
 6. Only after all checks pass, it calls Morphe's `PatchBundleRepository.createLocal()`.
 7. Morphe owns the resulting local source and its normal patch metadata loading.
 
-## What this does not do
+## Catalog execution gate\n\nThe repository currently marks its app entries as candidate/experimental and its\npatch sources as disabled-until-reviewed. Therefore the catalog service can\ndiscover compatible entries but intentionally refuses to import them. A matching\nversion and valid SHA-256 are not, by themselves, permission to execute a patch\nbundle. The gate requires app status `verified`, source trust\n`official-publisher`, and execution policy `enabled`.\n\n## What this does not do
 
 - It does not download APKs.
 - It does not automatically choose or execute patches.
