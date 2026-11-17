@@ -29,9 +29,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Set up Java toolchains
         uses: actions/setup-java@v4
         with:
