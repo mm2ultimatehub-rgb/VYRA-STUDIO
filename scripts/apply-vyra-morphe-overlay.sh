@@ -5,7 +5,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANAGER="$ROOT/upstream/morphe-manager"
 EXPECTED_MANAGER_SHA="d9f56746d13890c0f8837c6d070dae6f210ad2a9"
 SOURCE="$ROOT/integration/morphe-overlay/VyraLocalBundleImporter.kt"
+CATALOG_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepository.kt"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
+CATALOG_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraCatalogRepository.kt"
 MODULE="$MANAGER/app/src/main/java/app/morphe/manager/di/RepositoryModule.kt"
 
 if ! git -C "$MANAGER" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -19,13 +21,14 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$MODULE" ]]; then
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$MODULE" ]]; then
   echo "ERROR: VYRA overlay source or Morphe DI module is missing." >&2
   exit 1
 fi
 
 mkdir -p "$(dirname "$TARGET")"
 cp "$SOURCE" "$TARGET"
+cp "$CATALOG_SOURCE" "$CATALOG_TARGET"
 
 python3 - "$MODULE" <<'PY'
 from pathlib import Path
@@ -35,6 +38,7 @@ path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
+catalog_registration = "    singleOf(::VyraCatalogRepository)"
 
 if import_line not in text:
     anchor = "import app.morphe.manager.domain.repository.*\n"
