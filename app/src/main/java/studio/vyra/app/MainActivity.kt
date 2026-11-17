@@ -316,6 +316,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
     var patchMatches by remember(selectedApk) { mutableStateOf<List<Pair<String, PatchEntry>>>(emptyList()) }
     var isCheckingPatches by remember(selectedApk) { mutableStateOf(false) }
     var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var catalogPatchMatches by remember(selectedApk) { mutableStateOf<List<Triple<String, String, PatchEntry>>>(emptyList()) }
+    var catalogLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -353,7 +355,34 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
             patchLookupMessage = if (matches.isEmpty()) {
                 "No compatible patches found in your saved sources."
             } else {
-                "${matches.size} compatible patch(es) found."
+                "\${matches.size} compatible patch(es) found."
+            }
+
+            try {
+                val remoteCatalog = withContext(Dispatchers.IO) { VyraRepositoryCatalogClient().fetch() }
+                val remoteMatches = buildList {
+                    remoteCatalog.apps.filter { it.packageName == apk.packageName }.forEach { app ->
+                        app.patchSourceIds.forEach sourceLoop@{ sourceId ->
+                            val patch = remoteCatalog.patchFor(app.id, sourceId) ?: return@sourceLoop
+                            if (PatchCompatibility.matches(patch, apk)) {
+                                val source = remoteCatalog.sources.firstOrNull { it.id == sourceId }
+                                if (source != null) {
+                                    val trustLabel = if (source.trust == "official-publisher") "Official publisher" else "Unverified community source"
+                                    add(Triple(source.publisher, "\${app.status} • $trustLabel • execution \${source.execution}", patch))
+                                }
+                            }
+                        }
+                    }
+                }
+                catalogPatchMatches = remoteMatches
+                catalogLookupMessage = if (remoteMatches.isEmpty()) {
+                    "No exact-version match in the VYRA catalog for this APK."
+                } else {
+                    "\${remoteMatches.size} VYRA catalog match(es) found. These are compatibility candidates, not applied patches."
+                }
+            } catch (catalogError: Exception) {
+                catalogPatchMatches = emptyList()
+                catalogLookupMessage = "VYRA catalog could not be checked: \${catalogError.message ?: "unknown error"}"
             }
         } finally {
             isCheckingPatches = false
@@ -378,10 +407,17 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
         patchMatches.forEach { (repositoryName, patch) ->
             InfoCard(
                 title = patch.name,
-                body = "Source: ${repositoryName}\nTarget: ${patch.targetPackage}\nFormat: ${patch.format.uppercase()}\nArtifact SHA-256: ${patch.artifactSha256}",
+                body = "Source: \${repositoryName}\nTarget: \${patch.targetPackage}\nFormat: \${patch.format.uppercase()}\nArtifact SHA-256: \${patch.artifactSha256}",
             )
         }
-        InfoCard("2. Compatibility", "Only package and version-range matches are listed. Review the patch source and requirements before proceeding.")
+        catalogLookupMessage?.let { InfoCard("VYRA Repository compatibility", it) }
+        catalogPatchMatches.forEach { (publisher, sourceStatus, patch) ->
+            InfoCard(
+                title = patch.name,
+                body = "Publisher: $publisher\nTarget: \${patch.targetPackage}\nExact app versions: \${patch.targetVersions.sorted().joinToString(", ")}\nSource status: $sourceStatus\nSHA-256: \${patch.artifactSha256}\nBundle download and patch execution are not enabled in this build.",
+            )
+        }
+        InfoCard("2. Compatibility", "VYRA checks the package name and exact version name against the central catalog and saved sources. A match only confirms listed compatibility; it does not mean the patch was applied or tested on a device.")
         InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
     }
 }
