@@ -158,6 +158,15 @@ if new_application_id not in gradle_text:
     if gradle_text.count(old_application_id) != 1:
         raise SystemExit("ERROR: unexpected Morphe applicationId declaration; refusing unsafe branding edit.")
     gradle_text = gradle_text.replace(old_application_id, new_application_id, 1)
+
+# The upstream debug build adds `.debug` to applicationId by default. The
+# pinned google-services.json is registered for the VYRA engine ID without
+# that suffix, so explicitly remove it for this isolated CI engine build.
+debug_suffix = '            applicationIdSuffix = ".debug"'
+if debug_suffix in gradle_text:
+    gradle_text = gradle_text.replace(debug_suffix, '            applicationIdSuffix = ""', 1)
+elif '            applicationIdSuffix = ""' not in gradle_text:
+    raise SystemExit("ERROR: unexpected Morphe debug applicationIdSuffix; refusing unsafe branding edit.")
 app_gradle.write_text(gradle_text, encoding="utf-8")
 
 strings_text = strings_xml.read_text(encoding="utf-8-sig")
