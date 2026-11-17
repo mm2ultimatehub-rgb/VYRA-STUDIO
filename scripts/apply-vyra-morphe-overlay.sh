@@ -106,7 +106,10 @@ page_anchor = "            MainPage.APPS -> AppPullToRefreshBox("
 if "MainPage.VYRA_STORE -> VyraStorePage" not in home_text_ui:
     if home_text_ui.count(page_anchor) != 1:
         raise SystemExit("ERROR: HomeScreen page cases changed; refusing unsafe Store page edit.")
-    home_text_ui = home_text_ui.replace(page_anchor, "            MainPage.VYRA_STORE -> VyraStorePage(bottomBarHeight = bottomBarHeight)\n\n" + page_anchor, 1)
+    home_text_ui = home_text_ui.replace(page_anchor, "            MainPage.VYRA_STORE -> VyraStorePage(
+                bottomBarHeight = bottomBarHeight,
+                onAppSelected = { packageName -> homeViewModel.patchFlow.showPatchDialog(packageName) }
+            )\n\n" + page_anchor, 1)
 home_screen.write_text(home_text_ui, encoding="utf-8")
 
 # Connect catalog discovery to the actual patch flow. Import is attempted only
