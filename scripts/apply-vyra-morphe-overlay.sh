@@ -9,11 +9,13 @@ CATALOG_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepository.kt"
 TEST_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepositoryTest.kt"
 VALIDATOR_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidator.kt"
 VALIDATOR_TEST_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidatorTest.kt"
+STORE_SOURCE="$ROOT/integration/morphe-overlay/VyraStorePage.kt"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
 CATALOG_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraCatalogRepository.kt"
 TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/VyraCatalogRepositoryTest.kt"
 VALIDATOR_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/MppArchiveValidator.kt"
 VALIDATOR_TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/MppArchiveValidatorTest.kt"
+STORE_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/vyra/VyraStorePage.kt"
 MODULE="$MANAGER/app/src/main/java/app/morphe/manager/di/RepositoryModule.kt"
 
 if ! git -C "$MANAGER" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -27,7 +29,7 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$MODULE" ]]; then
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$MODULE" ]]; then
   echo "ERROR: VYRA overlay source or Morphe DI module is missing." >&2
   exit 1
 fi
@@ -39,8 +41,10 @@ cp "$VALIDATOR_SOURCE" "$VALIDATOR_TARGET"
 mkdir -p "$(dirname "$TEST_TARGET")"
 cp "$TEST_SOURCE" "$TEST_TARGET"
 cp "$VALIDATOR_TEST_SOURCE" "$VALIDATOR_TEST_TARGET"
+mkdir -p "$(dirname "$STORE_TARGET")"
+cp "$STORE_SOURCE" "$STORE_TARGET"
 
-python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" <<'PY'
+python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" <<'PY'
 from pathlib import Path
 import sys
 
@@ -48,6 +52,8 @@ path = Path(sys.argv[1])
 root = Path(sys.argv[2])
 app_gradle = Path(sys.argv[3])
 strings_xml = Path(sys.argv[4])
+main_navigation = Path(sys.argv[5])
+home_screen = Path(sys.argv[6])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
@@ -71,6 +77,37 @@ if catalog_registration not in text:
     text = text.replace(registration, registration + "\n" + catalog_registration, 1)
 
 path.write_text(text, encoding="utf-8")
+
+# Add the VYRA Store as a first-class page in the existing engine navigation.
+navigation_text = main_navigation.read_text(encoding="utf-8")
+settings_entry = "    SETTINGS(R.string.settings, MaterialSymbols.Rounded.Settings)"
+store_entry = "    VYRA_STORE(R.string.vyra_store, MaterialSymbols.Rounded.Apps)"
+if store_entry not in navigation_text:
+    if navigation_text.count(settings_entry) != 1:
+        raise SystemExit("ERROR: MainPage enum changed; refusing unsafe Store navigation edit.")
+    navigation_text = navigation_text.replace(settings_entry, settings_entry + ",\\n" + store_entry, 1)
+main_navigation.write_text(navigation_text, encoding="utf-8")
+
+home_text_ui = home_screen.read_text(encoding="utf-8")
+store_import = "import app.morphe.manager.ui.screen.vyra.VyraStorePage"
+if store_import not in home_text_ui:
+    anchor = "import app.morphe.manager.ui.screen.shared.AppPullToRefreshBox"
+    if anchor not in home_text_ui:
+        raise SystemExit("ERROR: HomeScreen imports changed; refusing unsafe Store page edit.")
+    home_text_ui = home_text_ui.replace(anchor, store_import + "\\n" + anchor, 1)
+
+nav_covered_anchor = "                MainPage.SETTINGS -> false"
+if "MainPage.VYRA_STORE -> false" not in home_text_ui:
+    if home_text_ui.count(nav_covered_anchor) != 1:
+        raise SystemExit("ERROR: HomeScreen navigationCovered cases changed; refusing unsafe Store page edit.")
+    home_text_ui = home_text_ui.replace(nav_covered_anchor, nav_covered_anchor + "\\n                MainPage.VYRA_STORE -> false", 1)
+
+page_anchor = "            MainPage.APPS -> AppPullToRefreshBox("
+if "MainPage.VYRA_STORE -> VyraStorePage" not in home_text_ui:
+    if home_text_ui.count(page_anchor) != 1:
+        raise SystemExit("ERROR: HomeScreen page cases changed; refusing unsafe Store page edit.")
+    home_text_ui = home_text_ui.replace(page_anchor, "            MainPage.VYRA_STORE -> VyraStorePage(bottomBarHeight = bottomBarHeight)\\n\\n" + page_anchor, 1)
+home_screen.write_text(home_text_ui, encoding="utf-8")
 
 # Connect catalog discovery to the actual patch flow. Import is attempted only
 # when Morphe has no source for this exact app version, and the repository's
@@ -162,6 +199,13 @@ if gradle_text.count(expected_application_id) != 1:
 strings_text = strings_xml.read_text(encoding="utf-8-sig")
 old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
 new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
+store_string = '<string name="vyra_store">VYRA Store</string>'
+if store_string not in strings_text:
+    closing = "</resources>"
+    if strings_text.count(closing) != 1:
+        raise SystemExit("ERROR: unexpected strings.xml structure; refusing Store label edit.")
+    strings_text = strings_text.replace(closing, "    " + store_string + "\\n" + closing, 1)
+
 if new_app_name not in strings_text:
     if strings_text.count(old_app_name) != 1:
         raise SystemExit("ERROR: unexpected Morphe app_name resource; refusing unsafe branding edit.")
