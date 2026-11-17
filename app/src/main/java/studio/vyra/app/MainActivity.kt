@@ -250,6 +250,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
     var patchMatches by remember(selectedApk) { mutableStateOf<List<Pair<String, PatchEntry>>>(emptyList()) }
     var isCheckingPatches by remember(selectedApk) { mutableStateOf(false) }
     var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var downloadingArtifactId by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var artifactStatuses by remember(selectedApk) { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -322,6 +324,34 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
                 title = patch.name,
                 body = "Source: ${repositoryName}\nTarget: ${patch.targetPackage}\nFormat: ${patch.format.uppercase()}\nArtifact SHA-256: ${patch.artifactSha256}",
             )
+            Button(
+                onClick = {
+                    downloadingArtifactId = patch.id
+                    scope.launch {
+                        try {
+                            val (file, metadata) = withContext(Dispatchers.IO) {
+                                val verified = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                verified to MppBundleInspector().inspect(verified, patch.expectedArtifactVersion)
+                            }
+                            val label = metadata.name ?: file.name
+                            val version = metadata.version?.let { " v$it" }.orEmpty()
+                            artifactStatuses = artifactStatuses + (
+                                patch.id to "SHA-256 verified · MPP inspected: $label$version · ${metadata.dexEntryCount} DEX entr(y/ies). Ready for engine import."
+                            )
+                        } catch (error: Exception) {
+                            artifactStatuses = artifactStatuses + (patch.id to (error.message ?: "Artifact verification failed."))
+                        } finally {
+                            downloadingArtifactId = null
+                        }
+                    }
+                },
+                enabled = downloadingArtifactId == null,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(if (downloadingArtifactId == patch.id) "Downloading and verifying…" else "Download and verify patch")
+            }
+            artifactStatuses[patch.id]?.let { InfoCard("Patch package status", it) }
         }
         InfoCard("2. Compatibility", "Only package and version-range matches are listed. Review the patch source and requirements before proceeding.")
         InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
