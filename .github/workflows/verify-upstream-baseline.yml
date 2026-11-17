@@ -1,0 +1,60 @@
+name: Verify Morphe upstream baseline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - integration/morphe-baseline
+    paths:
+      - ".gitmodules"
+      - "upstream/**"
+      - "scripts/verify-upstream-baseline.sh"
+      - ".github/workflows/verify-upstream-baseline.yml"
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: upstream-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout VYRA with pinned upstream sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Java toolchains
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            25
+            21
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify pinned source and build upstream debug APK
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          _JAVA_OPTIONS: "-Djava.awt.headless=true"
+        run: bash scripts/verify-upstream-baseline.sh
+
+      - name: Upload upstream debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: morphe-upstream-baseline-debug
+          path: upstream/morphe-manager/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
