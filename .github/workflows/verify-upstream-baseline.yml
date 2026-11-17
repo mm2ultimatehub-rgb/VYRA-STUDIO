@@ -11,6 +11,8 @@ on:
       - "upstream/**"
       - "app/**"
       - "scripts/verify-upstream-baseline.sh"
+      - "scripts/apply-vyra-morphe-overlay.sh"
+      - "integration/morphe-overlay/**"
       - ".github/workflows/verify-upstream-baseline.yml"
 
 permissions:
