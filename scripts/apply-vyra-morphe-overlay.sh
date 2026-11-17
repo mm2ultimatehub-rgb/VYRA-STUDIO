@@ -7,9 +7,13 @@ EXPECTED_MANAGER_SHA="d9f56746d13890c0f8837c6d070dae6f210ad2a9"
 SOURCE="$ROOT/integration/morphe-overlay/VyraLocalBundleImporter.kt"
 CATALOG_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepository.kt"
 TEST_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepositoryTest.kt"
+VALIDATOR_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidator.kt"
+VALIDATOR_TEST_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidatorTest.kt"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
 CATALOG_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraCatalogRepository.kt"
 TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/VyraCatalogRepositoryTest.kt"
+VALIDATOR_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/MppArchiveValidator.kt"
+VALIDATOR_TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/MppArchiveValidatorTest.kt"
 MODULE="$MANAGER/app/src/main/java/app/morphe/manager/di/RepositoryModule.kt"
 
 if ! git -C "$MANAGER" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -23,7 +27,7 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$MODULE" ]]; then
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$MODULE" ]]; then
   echo "ERROR: VYRA overlay source or Morphe DI module is missing." >&2
   exit 1
 fi
@@ -31,8 +35,10 @@ fi
 mkdir -p "$(dirname "$TARGET")"
 cp "$SOURCE" "$TARGET"
 cp "$CATALOG_SOURCE" "$CATALOG_TARGET"
+cp "$VALIDATOR_SOURCE" "$VALIDATOR_TARGET"
 mkdir -p "$(dirname "$TEST_TARGET")"
 cp "$TEST_SOURCE" "$TEST_TARGET"
+cp "$VALIDATOR_TEST_SOURCE" "$VALIDATOR_TEST_TARGET"
 
 python3 - "$MODULE" "$ROOT" <<'PY'
 from pathlib import Path
