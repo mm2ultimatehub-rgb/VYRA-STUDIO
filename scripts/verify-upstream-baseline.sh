@@ -22,6 +22,8 @@ for name in "${!EXPECTED[@]}"; do
   echo "Verified upstream/$name @ $actual"
 done
 
+bash "$ROOT/scripts/apply-vyra-morphe-overlay.sh"
+
 cd "$UPSTREAM/morphe-manager"
 chmod +x ./gradlew
 ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
