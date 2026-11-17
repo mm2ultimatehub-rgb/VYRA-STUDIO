@@ -55,7 +55,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: morphe-upstream-baseline-debug
+          name: vyra-studio-engine-debug
           path: upstream/morphe-manager/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
