@@ -118,10 +118,19 @@ if home_injection not in home_text:
 
 patchflow_anchor = "        patchBundleRepository = patchBundleRepository,\n"
 patchflow_dependency = "        vyraCatalogRepository = vyraCatalogRepository,\n"
+patchflow_start = "    val patchFlow = PatchFlow(\n"
 if patchflow_dependency not in home_text:
-    if patchflow_anchor not in home_text:
-        raise SystemExit("ERROR: HomeViewModel PatchFlow wiring changed; refusing unsafe VYRA integration.")
-    home_text = home_text.replace(patchflow_anchor, patchflow_anchor + patchflow_dependency, 1)
+    start = home_text.find(patchflow_start)
+    if start < 0:
+        raise SystemExit("ERROR: HomeViewModel PatchFlow construction changed; refusing unsafe VYRA integration.")
+    end = home_text.find("\n    )", start)
+    if end < 0:
+        raise SystemExit("ERROR: HomeViewModel PatchFlow call is incomplete; refusing unsafe VYRA integration.")
+    block = home_text[start:end]
+    if patchflow_anchor not in block:
+        raise SystemExit("ERROR: PatchFlow repository argument changed; refusing unsafe VYRA integration.")
+    block = block.replace(patchflow_anchor, patchflow_anchor + patchflow_dependency, 1)
+    home_text = home_text[:start] + block + home_text[end:]
 home_vm.write_text(home_text, encoding="utf-8")
 PY
 
