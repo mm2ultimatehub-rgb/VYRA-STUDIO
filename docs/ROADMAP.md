@@ -35,6 +35,14 @@
 - [x] Add source trust prompts and provenance display.
 - [x] Show patch metadata and compatibility in the Store/Patcher screens.
 
+## Phase 2A — App-first discovery catalog
+- [x] Research official Morphe patches and community patch sources.
+- [x] Record initial social/media app targets and source provenance in docs/APP-AND-PATCH-CATALOG-RESEARCH.md.
+- [ ] Implement package-name-based app catalog and source discovery adapters.
+- [ ] Add exact app-version and bundle compatibility resolution.
+- [ ] Add a trusted APK acquisition resolver separate from patch-bundle discovery.
+- [ ] Verify each app/version on-device before marking it stable.
+
 ## Phase 3 — APK inspection and patch pipeline
 - [x] Import APKs using Android's Storage Access Framework.
 - [x] Inspect package metadata and signing-certificate fingerprints.
