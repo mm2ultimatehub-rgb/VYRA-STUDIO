@@ -61,3 +61,19 @@ git clone --branch integration/morphe-baseline --recurse-submodules https://gith
 ```
 
 The submodule is a provenance/source-staging step only. The current VYRA Android build does not yet consume or compile it. Do not describe the patch engine as integrated until the Gradle project, Android service/runtime, patch bundle execution, signing and device validation are connected and tested.
+
+
+## Pinned patcher dependency graph
+
+The patcher library is a separate source project and is also pinned as a submodule. Its source-based composite build is important because the Manager's published Maven package is hosted in Morphe's GitHub Packages registry; the upstream CI explicitly supplies a GitHub token to resolve it. VYRA must not assume that its own repository token can read another owner's package.
+
+| Source | Pinned commit | License reported by GitHub |
+|---|---|---|
+| `MorpheApp/morphe-manager` | `d9f56746d13890c0f8837c6d070dae6f210ad2a9` | GPL-3.0 |
+| `MorpheApp/morphe-patcher` | `0aed87c4e3264cf9233feab7ed26cf2543a08b96` | GPL-3.0 |
+| `MorpheApp/ARSCLib` | `50418a07a806f7fc6d8a567be81d951d6e360079` | Apache-2.0 |
+| `MorpheApp/smali` | `bbabf5f9980028daba64c19366483bbddc05cf01` | Not asserted by GitHub; inspect its actual license files before distribution |
+
+All four sources are pinned under `upstream/` as submodules. The upstream project files expect sibling source directories for local composite builds. The intended checkout layout therefore deliberately places `morphe-manager`, `morphe-patcher`, `ARSCLib` and `smali` side by side under `upstream/`.
+
+The patcher source build itself still needs its exact transitive dependencies and toolchain validated. In particular, review the smali license, patcher version catalog, ARSCLib substitution and any additional JitPack/GitHub package requirements before enabling the composite build.
