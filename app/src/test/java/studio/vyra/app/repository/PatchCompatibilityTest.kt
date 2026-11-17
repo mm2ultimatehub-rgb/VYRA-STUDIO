@@ -37,6 +37,11 @@ class PatchCompatibilityTest {
     }
 
     @Test
+    fun emptyExactVersionListKeepsVersionRangeBehavior() {
+        assertTrue(PatchCompatibility.matches(patch(), apk))
+    }
+
+    @Test
     fun matchesExactCatalogVersion() {
         assertTrue(PatchCompatibility.matches(patch(targetVersions = setOf("2.0", "2.1")), apk))
     }
