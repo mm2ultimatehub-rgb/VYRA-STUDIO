@@ -32,7 +32,7 @@ class VyraCatalogRepositoryTest {
         execution = execution,
         releaseVersion = "2.3.0",
         artifactUrl = artifactUrl,
-        sha256 = "1c37549274a2b6cf7f2e3e099d9b8cb6418809a7dac323a95638a06bb4509a9",
+        sha256 = "1c37549274a2b6cf7f2e3e099d9b8cb641880b8a7dac323a95638a06bb4509a9",
         targetVersions = versions
     )
 
