@@ -1,6 +1,7 @@
 package studio.vyra.app.catalog
 
 import org.json.JSONArray
+import studio.vyra.app.repository.PatchEntry
 import org.json.JSONException
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -25,13 +26,37 @@ data class RemotePatchSource(
     val releaseVersion: String?,
     val trust: String,
     val execution: String,
+    val assetName: String?,
+    val assetUrl: String?,
+    val sha256: String?,
 )
 
 data class RemoteVyraCatalog(
     val apps: List<RemoteCatalogApp>,
     val sources: List<RemotePatchSource>,
     val generatedAt: String,
-)
+) {
+    fun patchFor(appId: String, sourceId: String): PatchEntry? {
+        val app = apps.firstOrNull { it.id == appId } ?: return null
+        val source = sources.firstOrNull { it.id == sourceId } ?: return null
+        val versions = app.targetVersions[sourceId].orEmpty().toSet()
+        val url = source.assetUrl ?: return null
+        val digest = source.sha256 ?: return null
+        if (versions.isEmpty()) return null
+        return PatchEntry(
+            id = appId + "-" + sourceId,
+            name = app.name + " patch bundle",
+            description = "Catalog-provided " + source.publisher + " bundle " + source.releaseVersion.orEmpty(),
+            targetPackage = app.packageName,
+            minVersionCode = null,
+            maxVersionCode = null,
+            artifactUrl = url,
+            artifactSha256 = digest,
+            format = "mpp",
+            targetVersions = versions,
+        )
+    }
+}
 
 class VyraRepositoryCatalogClient {
     fun fetch(): RemoteVyraCatalog {
@@ -122,9 +147,23 @@ class VyraRepositoryCatalogClient {
                         releaseVersion = release?.optString("version")?.takeIf { !it.isNullOrBlank() },
                         trust = item.optString("trust", "unverified"),
                         execution = item.optString("execution", "disabled"),
+                        assetName = release?.optString("assetName")?.takeIf { !it.isNullOrBlank() },
+                        assetUrl = release?.optString("assetUrl")?.takeIf { !it.isNullOrBlank() }?.also { validateArtifactUrl(it) },
+                        sha256 = release?.optString("sha256")?.takeIf { !it.isNullOrBlank() }?.lowercase()?.also {
+                            require(SHA256_PATTERN.matches(it)) { "Patch source $id has an invalid SHA-256." }
+                        },
                     ),
                 )
             }
+        }
+    }
+
+    private fun validateArtifactUrl(value: String) {
+        val uri = runCatching { URI(value.trim()) }
+            .getOrElse { throw IllegalArgumentException("Patch artifact URL is invalid.", it) }
+        require(uri.scheme.equals("https", true) && !uri.host.isNullOrBlank() &&
+            uri.userInfo == null && uri.fragment == null) {
+            "Patch artifacts must use valid HTTPS URLs."
         }
     }
 
@@ -196,6 +235,7 @@ class VyraRepositoryCatalogClient {
         const val CONNECT_TIMEOUT_MS = 10_000
         const val READ_TIMEOUT_MS = 15_000
         const val MAX_JSON_BYTES = 1_048_576
+        val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
         const val MAX_APPS = 100
         const val MAX_SOURCES = 50
         val ID_PATTERN = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{1,79}")
