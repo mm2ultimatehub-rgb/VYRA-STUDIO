@@ -54,6 +54,7 @@ data class RemoteVyraCatalog(
             artifactSha256 = digest,
             format = "mpp",
             targetVersions = versions,
+            expectedArtifactVersion = source.releaseVersion,
         )
     }
 }
