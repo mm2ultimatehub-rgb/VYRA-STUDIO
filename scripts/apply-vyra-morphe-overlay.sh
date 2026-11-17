@@ -70,8 +70,8 @@ patch_flow = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app
 home_vm = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
 
 flow_text = patch_flow.read_text(encoding="utf-8")
-flow_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\\n"
-flow_anchor = "    private val patchBundleRepository: PatchBundleRepository,\\n"
+flow_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\n"
+flow_anchor = "    private val patchBundleRepository: PatchBundleRepository,\n"
 if flow_dependency not in flow_text:
     if flow_anchor not in flow_text:
         raise SystemExit("ERROR: PatchFlow constructor changed; refusing unsafe VYRA integration.")
@@ -105,15 +105,15 @@ if "VYRA may supply a compatible source" not in flow_text:
 patch_flow.write_text(flow_text, encoding="utf-8")
 
 home_text = home_vm.read_text(encoding="utf-8")
-home_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\\n"
-home_anchor = "    private val localApkSources: LocalApkSources,\\n"
+home_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\n"
+home_anchor = "    private val localApkSources: LocalApkSources,\n"
 if home_dependency not in home_text:
     if home_anchor not in home_text:
         raise SystemExit("ERROR: HomeViewModel constructor changed; refusing unsafe VYRA integration.")
     home_text = home_text.replace(home_anchor, home_anchor + home_dependency, 1)
 
-patchflow_anchor = "        patchBundleRepository = patchBundleRepository,\\n"
-patchflow_dependency = "        vyraCatalogRepository = vyraCatalogRepository,\\n"
+patchflow_anchor = "        patchBundleRepository = patchBundleRepository,\n"
+patchflow_dependency = "        vyraCatalogRepository = vyraCatalogRepository,\n"
 if patchflow_dependency not in home_text:
     if patchflow_anchor not in home_text:
         raise SystemExit("ERROR: HomeViewModel PatchFlow wiring changed; refusing unsafe VYRA integration.")
