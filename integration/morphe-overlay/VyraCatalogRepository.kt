@@ -24,6 +24,7 @@ class VyraCatalogRepository(
         val appName: String,
         val packageName: String,
         val appStatus: String,
+        val patchStatus: String,
         val validationStatus: String,
         val sourceListedForApp: Boolean,
         val sourceId: String,
@@ -38,6 +39,7 @@ class VyraCatalogRepository(
     ) {
         val canImport: Boolean
             get() = appStatus == "verified" &&
+                patchStatus == "verified" &&
                 validationStatus == "passed" &&
                 sourceListedForApp &&
                 sourceId == "morphe-official" &&
@@ -97,6 +99,7 @@ class VyraCatalogRepository(
                                 appName = app.optString("name"),
                                 packageName = packageName,
                                 appStatus = app.optString("status", "unsupported"),
+                                patchStatus = patch.optString("status", "unsupported"),
                                 validationStatus = validationStatus,
                                 sourceListedForApp = sourceId in allowedSourceIds,
                                 sourceId = sourceId,
