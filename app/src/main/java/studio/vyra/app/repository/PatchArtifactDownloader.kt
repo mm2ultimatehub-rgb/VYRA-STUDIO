@@ -9,9 +9,13 @@ import java.security.MessageDigest
 
 class PatchArtifactDownloader {
     fun downloadAndVerify(patch: PatchEntry, cacheDirectory: File): File {
-        val uri = validateUrl(patch.artifactUrl)
+        val initialUri = validateUrl(patch.artifactUrl)
+        require(initialUri.host.lowercase() in REDIRECT_HOSTS) {
+            "Patch artifact host is not approved: ${initialUri.host}"
+        }
         require(patch.format == "mpp") { "Unsupported patch artifact format." }
         require(SHA256_PATTERN.matches(patch.artifactSha256)) { "Patch SHA-256 is invalid." }
+        require(PATCH_ID_PATTERN.matches(patch.id)) { "Patch id has an invalid format." }
 
         val directory = File(cacheDirectory, "verified-patches")
         require(directory.exists() || directory.mkdirs()) { "Could not prepare patch cache." }
@@ -20,21 +24,11 @@ class PatchArtifactDownloader {
         if (target.exists()) target.delete()
 
         val temporary = File.createTempFile("vyra-", ".part", directory)
-        val connection = (URL(uri.toString()).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            instanceFollowRedirects = false
-            setRequestProperty("Accept", "application/octet-stream, application/x-mpp, */*")
-            setRequestProperty("User-Agent", "VyraStudio/0.1")
-        }
-
+        var connection: HttpURLConnection? = null
         try {
+            connection = openFinalConnection(initialUri)
             val status = connection.responseCode
-            require(status == HttpURLConnection.HTTP_OK) {
-                if (status in 300..399) "Artifact redirects are not accepted. Use the final HTTPS URL."
-                else "Artifact download failed with HTTP $status."
-            }
+            require(status == HttpURLConnection.HTTP_OK) { "Artifact download failed with HTTP $status." }
             val declaredLength = connection.contentLengthLong
             require(declaredLength < 0 || declaredLength <= MAX_ARTIFACT_BYTES) {
                 "Patch artifact is larger than the 50 MB limit."
@@ -69,8 +63,35 @@ class PatchArtifactDownloader {
             temporary.delete()
             throw error
         } finally {
-            connection.disconnect()
+            connection?.disconnect()
         }
+    }
+
+    private fun openFinalConnection(start: URI): HttpURLConnection {
+        var current = start
+        repeat(MAX_REDIRECTS + 1) { redirectCount ->
+            val connection = (URL(current.toString()).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = CONNECT_TIMEOUT_MS
+                readTimeout = READ_TIMEOUT_MS
+                instanceFollowRedirects = false
+                setRequestProperty("Accept", "application/octet-stream, application/x-mpp, */*")
+                setRequestProperty("User-Agent", "VyraStudio/0.1")
+            }
+            val status = connection.responseCode
+            if (status !in 300..399) return connection
+            val location = connection.getHeaderField("Location")
+            connection.disconnect()
+            require(redirectCount < MAX_REDIRECTS) { "Artifact redirected too many times." }
+            require(!location.isNullOrBlank()) { "Artifact redirect is missing its destination." }
+            val next = runCatching { current.resolve(location) }
+                .getOrElse { throw IllegalArgumentException("Artifact redirect URL is invalid.", it) }
+            current = validateUrl(next.toString())
+            require(current.host.lowercase() in REDIRECT_HOSTS) {
+                "Artifact redirect points to an unapproved host: ${current.host}"
+            }
+        }
+        throw IllegalArgumentException("Artifact redirect limit exceeded.")
     }
 
     private fun sha256(file: File): String {
@@ -100,6 +121,14 @@ class PatchArtifactDownloader {
         const val CONNECT_TIMEOUT_MS = 10_000
         const val READ_TIMEOUT_MS = 30_000
         const val MAX_ARTIFACT_BYTES = 50L * 1024L * 1024L
+        const val MAX_REDIRECTS = 5
         val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
+        val PATCH_ID_PATTERN = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{1,159}")
+        val REDIRECT_HOSTS = setOf(
+            "github.com",
+            "release-assets.githubusercontent.com",
+            "objects.githubusercontent.com",
+            "github-releases.githubusercontent.com",
+        )
     }
 }
