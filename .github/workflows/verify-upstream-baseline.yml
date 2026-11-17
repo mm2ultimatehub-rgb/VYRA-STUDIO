@@ -12,6 +12,8 @@ on:
       - "app/**"
       - "scripts/verify-upstream-baseline.sh"
       - "scripts/apply-vyra-morphe-overlay.sh"
+      - "scripts/validate-vyra-branding.sh"
+      - "branding/**"
       - "integration/morphe-overlay/**"
       - ".github/workflows/verify-upstream-baseline.yml"
 
