@@ -37,7 +37,7 @@ internal object MppArchiveValidator {
                 require(
                     name.isNotBlank() &&
                         !name.startsWith("/") &&
-                        !name.contains('\\\\') &&
+                        !name.contains('\\') &&
                         !name.contains('\u0000') &&
                         !Regex("^[A-Za-z]:").containsMatchIn(name) &&
                         segments.none { it.isEmpty() || it == "." || it == ".." } &&
