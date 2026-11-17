@@ -405,7 +405,7 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
             try {
                 val inspected = withContext(Dispatchers.IO) {
                     val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
-                    val metadata = MppBundleInspector().inspect(file)
+                    val metadata = MppBundleInspector().inspect(file, patch.expectedArtifactVersion)
                     file to metadata
                 }
                 val metadata = inspected.second
@@ -463,7 +463,7 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
                         try {
                             val inspected = withContext(Dispatchers.IO) {
                                 val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
-                                val metadata = MppBundleInspector().inspect(file)
+                                val metadata = MppBundleInspector().inspect(file, patch.expectedArtifactVersion)
                                 file to metadata
                             }
                             val metadata = inspected.second
