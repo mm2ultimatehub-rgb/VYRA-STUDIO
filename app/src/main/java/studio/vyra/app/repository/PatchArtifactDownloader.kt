@@ -10,6 +10,9 @@ import java.security.MessageDigest
 class PatchArtifactDownloader {
     fun downloadAndVerify(patch: PatchEntry, cacheDirectory: File): File {
         val initialUri = validateUrl(patch.artifactUrl)
+        require(initialUri.host.lowercase() in REDIRECT_HOSTS) {
+            "Patch artifact host is not approved: ${initialUri.host}"
+        }
         require(patch.format == "mpp") { "Unsupported patch artifact format." }
         require(SHA256_PATTERN.matches(patch.artifactSha256)) { "Patch SHA-256 is invalid." }
         require(PATCH_ID_PATTERN.matches(patch.id)) { "Patch id has an invalid format." }
