@@ -75,7 +75,5 @@ class VyraLocalBundleImporter(
 
     private companion object {
         const val MAX_BUNDLE_BYTES = 50L * 1024L * 1024L
-        const val MAX_ARCHIVE_ENTRIES = 50_000
-        const val MAX_EXPANDED_BYTES = 250L * 1024L * 1024L
     }
 }
