@@ -24,6 +24,17 @@ done
 
 bash "$ROOT/scripts/apply-vyra-morphe-overlay.sh"
 
+# Validate the archive guard against the actual official Morphe release artifact.
+# The bundle is downloaded only into the ephemeral CI workspace and is not committed.
+FIXTURE_DIR="$ROOT/.ci-fixtures"
+MORPHE_MPP="$FIXTURE_DIR/patches-2.3.0.mpp"
+mkdir -p "$FIXTURE_DIR"
+curl --fail --location --retry 3 --connect-timeout 15 --max-time 180 \
+  --output "$MORPHE_MPP" \
+  "https://github.com/MorpheApp/morphe-patches/releases/download/v2.3.0/patches-2.3.0.mpp"
+echo "1c37549274a2b6cf7f2e3e099d9b8cb641880b8a7dac323a95638a06bb4509a9  $MORPHE_MPP" | sha256sum --check -
+export VYRA_TEST_MPP="$MORPHE_MPP"
+
 cd "$UPSTREAM/morphe-manager"
 chmod +x ./gradlew
 ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
