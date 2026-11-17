@@ -43,6 +43,20 @@ class PatchArtifactDownloaderTest {
     }
 
     @Test
+    fun rejectsUnapprovedInitialArtifactHostBeforeNetworkAccess() {
+        val patch = patch("a".repeat(64)).copy(
+            artifactUrl = "https://attacker.example/patches.mpp",
+        )
+
+        val error = runCatching {
+            PatchArtifactDownloader().downloadAndVerify(patch, temporaryFolder.root)
+        }.exceptionOrNull()
+
+        assertTrue(error is IllegalArgumentException)
+        assertEquals("Patch artifact host is not approved: attacker.example", error?.message)
+    }
+
+    @Test
     fun rejectsInvalidSha256BeforeNetworkAccess() {
         val patch = patch("not-a-digest")
 
