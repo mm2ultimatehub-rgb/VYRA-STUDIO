@@ -92,10 +92,10 @@ class VyraLocalBundleImporter(
                 }
                 if (entry.name.endsWith(".dex", ignoreCase = true)) dexEntries++
                 if (entry.size > 0L) {
-                    expandedBytes += entry.size
-                    require(expandedBytes <= MAX_EXPANDED_BYTES) {
+                    require(entry.size <= MAX_EXPANDED_BYTES - expandedBytes) {
                         "The patch bundle expands beyond the 250 MB safety limit."
                     }
+                    expandedBytes += entry.size
                 }
             }
 
