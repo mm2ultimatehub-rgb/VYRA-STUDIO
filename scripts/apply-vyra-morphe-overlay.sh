@@ -10,6 +10,9 @@ TEST_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepositoryTest.kt"
 VALIDATOR_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidator.kt"
 VALIDATOR_TEST_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidatorTest.kt"
 STORE_SOURCE="$ROOT/integration/morphe-overlay/VyraStorePage.kt"
+ICON_FOREGROUND_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_foreground.xml"
+ICON_ADAPTIVE_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_adaptive.xml"
+ICON_COLORS_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_colors.xml"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
 CATALOG_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraCatalogRepository.kt"
 TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/VyraCatalogRepositoryTest.kt"
@@ -29,8 +32,8 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$MODULE" ]]; then
-  echo "ERROR: VYRA overlay source or Morphe DI module is missing." >&2
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$ICON_FOREGROUND_SOURCE" || ! -f "$ICON_ADAPTIVE_SOURCE" || ! -f "$ICON_COLORS_SOURCE" || ! -f "$MODULE" ]]; then
+  echo "ERROR: VYRA overlay source, branding resources, or Morphe DI module is missing." >&2
   exit 1
 fi
 
@@ -43,6 +46,12 @@ cp "$TEST_SOURCE" "$TEST_TARGET"
 cp "$VALIDATOR_TEST_SOURCE" "$VALIDATOR_TEST_TARGET"
 mkdir -p "$(dirname "$STORE_TARGET")"
 cp "$STORE_SOURCE" "$STORE_TARGET"
+
+# Install the VYRA adaptive launcher icon into the temporary pinned engine tree.
+mkdir -p "$MANAGER/app/src/main/res/drawable" "$MANAGER/app/src/main/res/mipmap-anydpi-v26" "$MANAGER/app/src/main/res/values"
+cp "$ICON_FOREGROUND_SOURCE" "$MANAGER/app/src/main/res/drawable/vyra_launcher_foreground.xml"
+cp "$ICON_ADAPTIVE_SOURCE" "$MANAGER/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+cp "$ICON_COLORS_SOURCE" "$MANAGER/app/src/main/res/values/vyra_launcher_colors.xml"
 
 python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" <<'PY'
 from pathlib import Path
@@ -78,7 +87,6 @@ if catalog_registration not in text:
 
 path.write_text(text, encoding="utf-8")
 
-# Add the VYRA Store as a first-class page in the existing engine navigation.
 navigation_text = main_navigation.read_text(encoding="utf-8")
 settings_entry = "    SETTINGS(R.string.settings, MaterialSymbols.Rounded.Settings)"
 store_entry = "    VYRA_STORE(R.string.vyra_store, MaterialSymbols.Rounded.Apps)"
@@ -99,7 +107,7 @@ if store_import not in home_text_ui:
 nav_covered_anchor = "                MainPage.SETTINGS -> false"
 if "MainPage.VYRA_STORE -> false" not in home_text_ui:
     if home_text_ui.count(nav_covered_anchor) != 1:
-        raise SystemExit("ERROR: HomeScreen navigationCovered cases changed; refusing unsafe Store page edit.")
+        raise SystemExit("ERROR: HomeScreen navigationCovered cases changed; refusing unsafe Store navigation edit.")
     home_text_ui = home_text_ui.replace(nav_covered_anchor, nav_covered_anchor + "\n                MainPage.VYRA_STORE -> false", 1)
 
 page_anchor = "            MainPage.APPS -> AppPullToRefreshBox("
@@ -114,12 +122,8 @@ if "MainPage.VYRA_STORE -> VyraStorePage" not in home_text_ui:
 """ + page_anchor, 1)
 home_screen.write_text(home_text_ui, encoding="utf-8")
 
-# Connect catalog discovery to the actual patch flow. Import is attempted only
-# when Morphe has no source for this exact app version, and the repository's
-# execution gate must approve the catalog entry before any MPP is imported.
 patch_flow = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/PatchFlow.kt"
 home_vm = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
-
 flow_text = patch_flow.read_text(encoding="utf-8")
 flow_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\n"
 flow_anchor = "    private val patchBundleRepository: PatchBundleRepository,\n"
@@ -134,8 +138,6 @@ flow_hook = """        // VYRA may supply a compatible source when Morphe has no
         val existingForVersion = patchBundleRepository
             .scopedBundleInfoFlow(selectedApp.packageName, selectedApp.version, selectedApp.versionCode)
             .first()
-        // scopedBundleInfoFlow includes empty per-source scopes, so checking list.isEmpty()
-        // would incorrectly suppress catalog discovery whenever any source is installed.
         val hasUsableExistingPatches = existingForVersion.any {
             it.compatible.isNotEmpty() || it.universal.isNotEmpty()
         }
@@ -165,8 +167,6 @@ if "VYRA may supply a compatible source" not in flow_text:
 patch_flow.write_text(flow_text, encoding="utf-8")
 
 home_text = home_vm.read_text(encoding="utf-8")
-# HomeViewModel is a KoinComponent. Resolve this dependency lazily instead of
-# changing its constructor, which is also created by viewModelOf.
 home_injection = "    private val vyraCatalogRepository: VyraCatalogRepository by inject()\n"
 home_anchor = "    private val patcherProcesses: PatcherProcesses by inject()\n"
 if home_injection not in home_text:
@@ -191,11 +191,6 @@ if patchflow_dependency not in home_text:
     home_text = home_text[:start] + block + home_text[end:]
 home_vm.write_text(home_text, encoding="utf-8")
 
-# Keep the upstream application ID for the engine build because the pinned
-# google-services.json contains Firebase clients only for app.morphe.manager
-# and app.morphe.manager.debug. VYRA branding is applied through the launcher
-# label; changing the package ID without an authorized Firebase client would
-# break the build and could break Firebase-backed runtime features.
 gradle_text = app_gradle.read_text(encoding="utf-8")
 expected_application_id = 'applicationId = "app.morphe.manager"'
 if gradle_text.count(expected_application_id) != 1:
@@ -223,4 +218,4 @@ if new_app_name not in strings_xml.read_text(encoding="utf-8"):
     raise SystemExit("ERROR: VYRA engine launcher label was not applied.")
 PY
 
-echo "Applied VYRA local MPP import bridge to pinned Morphe Manager."
+echo "Applied VYRA branding, adaptive launcher icon and local MPP import bridge to pinned Morphe Manager."
