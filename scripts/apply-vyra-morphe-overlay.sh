@@ -52,6 +52,12 @@ if registration not in text:
         raise SystemExit("ERROR: unexpected Morphe RepositoryModule bindings; refusing unsafe edit.")
     text = text.replace(anchor, anchor + registration + "\n", 1)
 
+if catalog_registration not in text:
+    anchor = registration + "\\n"
+    if anchor not in text:
+        raise SystemExit("ERROR: VYRA importer binding is missing; refusing unsafe edit.")
+    text = text.replace(anchor, anchor + catalog_registration + "\\n", 1)
+
 path.write_text(text, encoding="utf-8")
 PY
 
