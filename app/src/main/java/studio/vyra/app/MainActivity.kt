@@ -392,6 +392,42 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
         }
     }
 
+    // Prepare official, hash-pinned bundles automatically after an exact APK/version match.
+    // Community bundles remain manual; no downloaded patch code is executed here.
+    LaunchedEffect(catalogPatchMatches) {
+        val officialCandidates = catalogPatchMatches.filter { (_, status, _) ->
+            status.contains("Official publisher") &&
+                status.contains("execution disabled-until-reviewed")
+        }
+        for ((publisher, _, patch) in officialCandidates) {
+            downloadingPatchId = patch.id
+            bundleInspectionMessage = "Automatically preparing the official patch bundle from $publisher…"
+            try {
+                val inspected = withContext(Dispatchers.IO) {
+                    val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                    val metadata = MppBundleInspector().inspect(file)
+                    file to metadata
+                }
+                val metadata = inspected.second
+                bundleInspectionMessage = buildString {
+                    appendLine("Automatic preparation complete: ${inspected.first.name}")
+                    appendLine("Publisher: $publisher")
+                    appendLine("SHA-256: ${patch.artifactSha256} (verified)")
+                    appendLine("MPP name: ${metadata.name ?: "Not declared"}")
+                    appendLine("MPP version: ${metadata.version ?: "Not declared"}")
+                    appendLine("Author: ${metadata.author ?: "Not declared"}")
+                    appendLine("License: ${metadata.license ?: "Not declared"}")
+                    appendLine("DEX entries: ${metadata.dexEntryCount}")
+                    append("Inspection only — patch execution and APK rebuilding are not enabled yet.")
+                }
+            } catch (failure: Exception) {
+                bundleInspectionMessage = "Automatic bundle preparation failed: ${failure.message ?: "unknown error"}"
+            } finally {
+                downloadingPatchId = null
+            }
+        }
+    }
+
     PageColumn(padding) {
         PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
         InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
