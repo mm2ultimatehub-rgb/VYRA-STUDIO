@@ -58,7 +58,7 @@ fun VyraStorePage(bottomBarHeight: androidx.compose.ui.unit.Dp = 0.dp) {
         items(storeApps, key = { it.packageName }) { app ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(app.name, style = MaterialTheme.typography.titleMedium)
