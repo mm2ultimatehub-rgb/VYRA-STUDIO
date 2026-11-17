@@ -48,7 +48,7 @@ class VyraRepositoryCatalogClient {
 
         val sources = parseSources(sourceIndex.getJSONArray("sources"))
         val sourceIds = sources.map { it.id }.toSet()
-        val apps = parseApps(appIndex.getJSONArray("apps"), sourceIds, appsUrl)
+        val apps = parseApps(appIndex.getJSONArray("apps"), sourceIds, appsUrl.toString())
         return RemoteVyraCatalog(
             apps = apps,
             sources = sources,
