@@ -17,7 +17,7 @@ data class MppBundleMetadata(
 )
 
 class MppBundleInspector {
-    fun inspect(file: File): MppBundleMetadata {
+    fun inspect(file: File, expectedVersion: String? = null): MppBundleMetadata {
         require(file.isFile) { "Patch bundle file does not exist." }
         require(file.length() in 1..MAX_BUNDLE_BYTES) { "Patch bundle size is invalid or exceeds the 50 MB limit." }
 
@@ -44,10 +44,20 @@ class MppBundleInspector {
 
                 val attributes = manifest.mainAttributes
                 fun value(key: String) = attributes.getValue(key)?.trim()?.takeIf { it.isNotEmpty() }
+                val bundleVersion = value("Version")
+                if (!expectedVersion.isNullOrBlank()) {
+                    val expected = expectedVersion.trim().removePrefix("v").removePrefix("V")
+                    val actual = requireNotNull(bundleVersion) {
+                        "Patch bundle is missing its declared version."
+                    }.removePrefix("v").removePrefix("V")
+                    require(actual == expected) {
+                        "Patch bundle version mismatch: expected $expectedVersion but found $bundleVersion."
+                    }
+                }
 
                 MppBundleMetadata(
                     name = value("Name"),
-                    version = value("Version"),
+                    version = bundleVersion,
                     description = value("Description"),
                     source = value("Source"),
                     author = value("Author"),
