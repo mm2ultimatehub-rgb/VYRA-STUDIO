@@ -20,4 +20,5 @@ data class PatchEntry(
     val artifactSha256: String,
     val format: String,
     val targetVersions: Set<String> = emptySet(),
+    val expectedArtifactVersion: String? = null,
 )
