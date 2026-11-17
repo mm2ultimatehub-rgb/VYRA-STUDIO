@@ -447,9 +447,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
     PageColumn(padding) {
         PageHeading("Yama Merkezi", "APK dosyanı incele ve uyumlu yamaları kontrol et.")
         selectedTarget?.let { target ->
-            InfoCard("Selected app: ${target.name}", "${target.packageName}\n${target.availability.label}")
+            InfoCard("Seçilen uygulama: ${target.name}", "${target.packageName}\n${target.availability.label}")
         }
-        InfoCard("1. APK dosyan",  selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
+        InfoCard("1. APK dosyan",  selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Cihazından bir APK seç. Dosya telefonunda kalır.")
         Button(onClick = onChooseApk, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
             Text(if (selectedApk == null) "APK seç" else "Başka APK seç")
         }
@@ -489,18 +489,18 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
             inspection != null -> {
                 ApkDetailsCard(inspection!!)
                 if (selectedTarget != null && inspection!!.packageName != selectedTarget.packageName) {
-                    InfoCard("App mismatch", "You selected ${selectedTarget.name}, but this APK is ${inspection!!.appLabel}. Choose the correct APK before continuing.")
+                    InfoCard("Uygulama eşleşmiyor", "You selected ${selectedTarget.name}, but this APK is ${inspection!!.appLabel}. Choose the correct APK before continuing.")
                 }
             }
         }
         when {
             isCheckingPatches -> InfoCard("Uyumluluk kontrol ediliyor", "APK, kayıtlı yama kaynaklarıyla karşılaştırılıyor…")
-            patchLookupMessage != null -> InfoCard("Compatibility", patchLookupMessage!!)
+            patchLookupMessage != null -> InfoCard("Uyumluluk", patchLookupMessage!!)
         }
         patchMatches.forEach { (repositoryName, patch) ->
             InfoCard(
                 title = patch.name,
-                body = "Source: ${repositoryName}\nTarget: ${patch.targetPackage}\nFormat: ${patch.format.uppercase()}\nArtifact SHA-256: ${patch.artifactSha256}",
+                body = "Kaynak: ${repositoryName}\nHedef: ${patch.targetPackage}\nBiçim: ${patch.format.uppercase()}\nDosya SHA-256: ${patch.artifactSha256}",
             )
             Button(
                 onClick = {
@@ -527,7 +527,7 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text(if (downloadingArtifactId == patch.id) "Downloading and verifying…" else "Download and verify patch")
+                Text(if (downloadingArtifactId == patch.id) "İndiriliyor ve doğrulanıyor…" else "Yamayı indir ve doğrula")
             }
             artifactStatuses[patch.id]?.let { InfoCard("Patch package status", it) }
         }
@@ -603,13 +603,13 @@ private fun SourcesScreen(padding: PaddingValues) {
     LaunchedEffect(Unit) { refreshAll() }
 
     PageColumn(padding) {
-        PageHeading("Repositories", "Add an HTTPS repository index and inspect its patch catalog.")
-        InfoCard("Source safety", "Only repository metadata is fetched. Patch files are not downloaded or executed. Adding a source does not mean it is trusted.")
+        PageHeading("Yama Kaynakları", "HTTPS depo adresi ekle ve yama kataloğunu incele.")
+        InfoCard("Kaynak güvenliği", "Yalnızca depo bilgileri alınır. Yama dosyaları indirilmez veya çalıştırılmaz. Kaynak eklemek, ona güvenildiği anlamına gelmez.")
         OutlinedTextField(
             value = url,
             onValueChange = { url = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Repository index URL") },
+            label = { Text("Depo dizini adresi") },
             placeholder = { Text("https://example.com/vyra/index.json") },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
@@ -634,22 +634,22 @@ private fun SourcesScreen(padding: PaddingValues) {
             enabled = !isLoading && url.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-        ) { Text("Validate and add source") }
+        ) { Text("Kaynağı doğrula ve ekle") }
         Button(
             onClick = { refreshAll() },
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-        ) { Text("Refresh saved sources") }
+        ) { Text("Kaynakları yenile") }
         if (isLoading) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Text("Fetching repository indexes…", style = MaterialTheme.typography.bodySmall)
+                Text("Depo dizinleri alınıyor…", style = MaterialTheme.typography.bodySmall)
             }
         }
-        status?.let { InfoCard("Source status", it) }
+        status?.let { InfoCard("Kaynak durumu", it) }
         if (sources.isEmpty() && !isLoading) {
-            InfoCard("No sources added", "Paste a direct HTTPS URL to a repository index that follows the Vyra Repository Index v1 format.")
+            InfoCard("Henüz kaynak eklenmedi", "VYRA Repository Index v1 biçimini destekleyen doğrudan HTTPS depo adresini yapıştır.")
         }
         sources.forEach { (sourceUrl, repository) ->
             RepositoryCard(
@@ -669,7 +669,7 @@ private fun SourcesScreen(padding: PaddingValues) {
     pendingSource?.let { (candidate, repository) ->
         AlertDialog(
             onDismissRequest = { pendingSource = null },
-            title = { Text("Review patch source") },
+            title = { Text("Yama kaynağını incele") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(repository.name, fontWeight = FontWeight.SemiBold)
@@ -691,10 +691,10 @@ private fun SourcesScreen(padding: PaddingValues) {
                             pendingSource = null
                         }
                     }
-                }) { Text("I trust this source") }
+                }) { Text("Bu kaynağa güveniyorum") }
             },
             dismissButton = {
-                Button(onClick = { pendingSource = null }) { Text("Cancel") }
+                Button(onClick = { pendingSource = null }) { Text("İptal") }
             },
         )
     }
@@ -718,7 +718,7 @@ private fun RepositoryCard(
             Text(sourceUrl, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             Text("${repository.patches.size} patch(es)", style = MaterialTheme.typography.labelMedium)
             Button(onClick = onRemove, shape = RoundedCornerShape(12.dp)) {
-                Text("Remove source")
+                Text("Kaynağı kaldır")
             }
             repository.patches.forEach { patch ->
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -765,8 +765,8 @@ private fun RepositoryCard(
 @Composable
 private fun BuildsScreen(padding: PaddingValues) {
     PageColumn(padding) {
-        PageHeading("Build center", "Follow every build from start to exported artifact.")
-        InfoCard("No build history", "Your completed builds, validation results, and logs will be listed here.")
+        PageHeading("Derleme Merkezi", "Oluşturma ve doğrulama süreçlerini buradan takip et.")
+        InfoCard("Henüz derleme yok", "Tamamlanan derlemeler, doğrulama sonuçları ve günlükler burada listelenecek.")
     }
 }
 
