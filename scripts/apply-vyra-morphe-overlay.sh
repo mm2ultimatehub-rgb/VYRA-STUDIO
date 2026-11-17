@@ -107,12 +107,14 @@ if "VYRA may supply a compatible source" not in flow_text:
 patch_flow.write_text(flow_text, encoding="utf-8")
 
 home_text = home_vm.read_text(encoding="utf-8")
-home_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\n"
-home_anchor = "    private val localApkSources: LocalApkSources,\n"
-if home_dependency not in home_text:
+# HomeViewModel is a KoinComponent. Resolve this dependency lazily instead of
+# changing its constructor, which is also created by viewModelOf.
+home_injection = "    private val vyraCatalogRepository: VyraCatalogRepository by inject()\n"
+home_anchor = "    private val patcherProcesses: PatcherProcesses by inject()\n"
+if home_injection not in home_text:
     if home_anchor not in home_text:
-        raise SystemExit("ERROR: HomeViewModel constructor changed; refusing unsafe VYRA integration.")
-    home_text = home_text.replace(home_anchor, home_anchor + home_dependency, 1)
+        raise SystemExit("ERROR: HomeViewModel Koin injection point changed; refusing unsafe VYRA integration.")
+    home_text = home_text.replace(home_anchor, home_anchor + home_injection, 1)
 
 patchflow_anchor = "        patchBundleRepository = patchBundleRepository,\n"
 patchflow_dependency = "        vyraCatalogRepository = vyraCatalogRepository,\n"
