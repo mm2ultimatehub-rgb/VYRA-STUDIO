@@ -92,12 +92,12 @@ private enum class VyraTab(
     val label: String,
     val icon: ImageVector,
 ) {
-    OVERVIEW("Overview", Icons.Filled.Home),
-    STORE("Store", Icons.Filled.Store),
-    PATCHER("Patcher", Icons.Filled.Build),
-    CREATOR("Creator", Icons.Filled.Edit),
-    SOURCES("Sources", Icons.Filled.Folder),
-    BUILDS("Builds", Icons.Filled.History),
+    OVERVIEW("Ana sayfa", Icons.Filled.Home),
+    STORE("Mağaza", Icons.Filled.Store),
+    PATCHER("Yama", Icons.Filled.Build),
+    CREATOR("Üretici", Icons.Filled.Edit),
+    SOURCES("Kaynaklar", Icons.Filled.Folder),
+    BUILDS("Derlemeler", Icons.Filled.History),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +125,7 @@ private fun VyraApp() {
                             letterSpacing = 1.5.sp,
                         )
                         Text(
-                            text = "ANDROID PATCH WORKSPACE",
+                            text = "APP CUSTOMIZATION STUDIO",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 1.2.sp,
@@ -196,39 +196,94 @@ private fun OverviewScreen(
         contentPadding = PaddingValues(
             start = 20.dp,
             end = 20.dp,
-            top = padding.calculateTopPadding() + 18.dp,
-            bottom = padding.calculateBottomPadding() + 24.dp,
+            top = padding.calculateTopPadding() + 12.dp,
+            bottom = padding.calculateBottomPadding() + 28.dp,
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item {
-            Text("Your workspace,\nwithout the clutter.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Text("Discover patches, prepare builds, and keep every source in one place.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("MERHABA, VYRA", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary, letterSpacing = 2.sp,
+                    fontWeight = FontWeight.Bold)
+                Text("Uygulamalarını\nyeniden tasarla.", style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold, lineHeight = 37.sp)
+                Text("Yamalarını keşfet. Kendi sürümünü oluştur.", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         item {
-            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(26.dp),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Surface(modifier = Modifier.size(42.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                        BoxCenter { Text("V", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) }
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Surface(
+                            modifier = Modifier.size(54.dp),
+                            shape = RoundedCornerShape(17.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                        ) {
+                            BoxCenter {
+                                Text("V", color = MaterialTheme.colorScheme.onPrimary,
+                                    fontSize = 31.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text("VYRA STUDIO", style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold, letterSpacing = 1.4.sp)
+                            Text("YOUR APPS. YOUR RULES.", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.1.sp)
+                        }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Early access", fontWeight = FontWeight.SemiBold)
-                        Text("The workspace is taking shape.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Tek bir çalışma alanında uygulama seç, uyumlu yamaları incele ve kendi özelleştirilmiş sürümünü hazırlamaya başla.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)) {
+                        Text("VYRA Mağazası'nı keşfet")
                     }
                 }
             }
         }
-        item { Text("Quick actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
-        item { ActionCard("Explore the Vyra Store", "Browse patch collections and release information.", "Open store", onOpenStore) }
-        item { ActionCard("Start a patching session", "Choose an APK you are authorized to modify.", "Open patcher", onOpenPatcher) }
-        item { ActionCard("Create a patch collection", "Prepare your own patch pack and metadata.", "Open creator", onOpenCreator) }
-        item { ActionCard("Manage patch sources", "Review repositories and their provenance.", "View sources", onOpenSources) }
-        item { Text("No builds yet", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("ÇALIŞMA ALANI", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary, letterSpacing = 1.5.sp,
+                    fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text("VYRA STUDIO", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item {
+            ActionCard("Yama merkezini aç", "APK seç, uygulama bilgilerini incele ve uyumlu yamaları kontrol et.",
+                "YAMA MERKEZİ", onOpenPatcher)
+        }
+        item {
+            ActionCard("Uygulama mağazası", "Destek durumu ve yama kaynakları bulunan uygulamaları keşfet.",
+                "MAĞAZAYI AÇ", onOpenStore)
+        }
+        item {
+            ActionCard("Yama koleksiyonu oluştur", "Kendi yama paketlerin ve koleksiyonların için çalışma alanı.",
+                "CREATOR'I AÇ", onOpenCreator)
+        }
+        item {
+            ActionCard("Kaynaklarını yönet", "Depoları incele, yeni kaynak ekle ve güven durumlarını kontrol et.",
+                "KAYNAKLARI GÖR", onOpenSources)
+        }
+        item {
+            Text("Güvenli çalışma", style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold)
+            Text("VYRA, uyumluluğu doğrulanmamış paketleri otomatik çalıştırmaz. Her yama kaynağını kontrol ederek ilerle.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
