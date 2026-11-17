@@ -282,8 +282,18 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
     }
 
 
-    LaunchedEffect(inspection) {
-        val apk = inspection ?: return@LaunchedEffect
+    LaunchedEffect(inspection, selectedTarget) {
+        val apk = inspection ?: run {
+            patchMatches = emptyList()
+            patchLookupMessage = null
+            return@LaunchedEffect
+        }
+        patchMatches = emptyList()
+        if (selectedTarget != null && selectedTarget.packageName != apk.packageName) {
+            isCheckingPatches = false
+            patchLookupMessage = "Selected app does not match this APK. Choose an APK for ${selectedTarget.name} before checking patches."
+            return@LaunchedEffect
+        }
         isCheckingPatches = true
         patchLookupMessage = null
         try {
@@ -296,6 +306,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                     VyraCatalogPatchProvider().fetchCompatible(apk)
                 }
                 matches += centralMatches
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                throw
             } catch (_: Exception) {
                 // A central catalog outage must not prevent locally configured sources from working.
             }
@@ -304,6 +316,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                     val repository = withContext(Dispatchers.IO) { client.fetch(sourceUrl) }
                     repository.patches.filter { PatchCompatibility.matches(it, apk) }
                         .forEach { matches += repository.name to it }
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                    throw
                 } catch (_: Exception) {
                     // A failed source is reported in the Sources screen; other sources remain usable.
                 }
