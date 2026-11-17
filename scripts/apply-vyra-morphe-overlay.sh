@@ -40,12 +40,14 @@ mkdir -p "$(dirname "$TEST_TARGET")"
 cp "$TEST_SOURCE" "$TEST_TARGET"
 cp "$VALIDATOR_TEST_SOURCE" "$VALIDATOR_TEST_TARGET"
 
-python3 - "$MODULE" "$ROOT" <<'PY'
+python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
 root = Path(sys.argv[2])
+app_gradle = Path(sys.argv[3])
+strings_xml = Path(sys.argv[4])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
@@ -146,6 +148,31 @@ if patchflow_dependency not in home_text:
     block = block.replace(patchflow_anchor, patchflow_anchor + patchflow_dependency, 1)
     home_text = home_text[:start] + block + home_text[end:]
 home_vm.write_text(home_text, encoding="utf-8")
+
+# Give the engine build its own VYRA application identity so it can coexist
+# with upstream Morphe and the separate VYRA shell during integration testing.
+gradle_text = app_gradle.read_text(encoding="utf-8")
+old_application_id = 'applicationId = "app.morphe.manager"'
+new_application_id = 'applicationId = "studio.vyra.studio.engine"'
+if new_application_id not in gradle_text:
+    if gradle_text.count(old_application_id) != 1:
+        raise SystemExit("ERROR: unexpected Morphe applicationId declaration; refusing unsafe branding edit.")
+    gradle_text = gradle_text.replace(old_application_id, new_application_id, 1)
+app_gradle.write_text(gradle_text, encoding="utf-8")
+
+strings_text = strings_xml.read_text(encoding="utf-8-sig")
+old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
+new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
+if new_app_name not in strings_text:
+    if strings_text.count(old_app_name) != 1:
+        raise SystemExit("ERROR: unexpected Morphe app_name resource; refusing unsafe branding edit.")
+    strings_text = strings_text.replace(old_app_name, new_app_name, 1)
+strings_xml.write_text(strings_text, encoding="utf-8")
+
+if new_application_id not in app_gradle.read_text(encoding="utf-8"):
+    raise SystemExit("ERROR: VYRA engine applicationId was not applied.")
+if new_app_name not in strings_xml.read_text(encoding="utf-8"):
+    raise SystemExit("ERROR: VYRA engine launcher label was not applied.")
 PY
 
 echo "Applied VYRA local MPP import bridge to pinned Morphe Manager."
