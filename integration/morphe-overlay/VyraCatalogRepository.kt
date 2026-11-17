@@ -19,6 +19,39 @@ import java.security.MessageDigest
 class VyraCatalogRepository(
     private val importer: VyraLocalBundleImporter
 ) {
+    data class StoreApp(
+        val id: String,
+        val name: String,
+        val packageName: String,
+        val category: String,
+        val status: String
+    )
+
+    suspend fun listStoreApps(): List<StoreApp> = withContext(Dispatchers.IO) {
+        val root = JSONObject(getJson(ROOT_URL))
+        require(root.optInt("schemaVersion", -1) == 1) { "Unsupported VYRA catalog schema." }
+        val catalog = root.getJSONObject("catalog")
+        val appsIndexUrl = checkedCatalogUrl(catalog.getString("apps"))
+        val index = JSONObject(getJson(appsIndexUrl.toString()))
+        require(index.optInt("schemaVersion", -1) == 1) { "Unsupported VYRA app index." }
+        val apps = index.getJSONArray("apps")
+        buildList {
+            for (i in 0 until apps.length()) {
+                val app = apps.getJSONObject(i)
+                val id = app.optString("id")
+                val name = app.optString("name")
+                val packageName = app.optString("packageName")
+                val category = app.optString("category", "other")
+                val status = app.optString("status", "unsupported")
+                require(id.matches(Regex("^[a-z0-9][a-z0-9-]{0,63}$")) &&
+                    name.isNotBlank() && packageName.matches(Regex("^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+$"))) {
+                    "VYRA catalog contains an invalid app record."
+                }
+                add(StoreApp(id, name, packageName, category, status))
+            }
+        }
+    }
+
     data class Candidate(
         val appId: String,
         val appName: String,
