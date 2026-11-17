@@ -72,8 +72,17 @@ The patcher library is a separate source project and is also pinned as a submodu
 | `MorpheApp/morphe-manager` | `d9f56746d13890c0f8837c6d070dae6f210ad2a9` | GPL-3.0 |
 | `MorpheApp/morphe-patcher` | `0aed87c4e3264cf9233feab7ed26cf2543a08b96` | GPL-3.0 |
 | `MorpheApp/ARSCLib` | `50418a07a806f7fc6d8a567be81d951d6e360079` | Apache-2.0 |
-| `MorpheApp/smali` | `bbabf5f9980028daba64c19366483bbddc05cf01` | Not asserted by GitHub; inspect its actual license files before distribution |
+| `MorpheApp/smali` | `bbabf5f9980028daba64c19366483bbddc05cf01` | GPL-3.0 for MorpheApp changes; audit upstream portions separately |
 
 All four sources are pinned under `upstream/` as submodules. The upstream project files expect sibling source directories for local composite builds. The intended checkout layout therefore deliberately places `morphe-manager`, `morphe-patcher`, `ARSCLib` and `smali` side by side under `upstream/`.
 
 The patcher source build itself still needs its exact transitive dependencies and toolchain validated. In particular, review the smali license, patcher version catalog, ARSCLib substitution and any additional JitPack/GitHub package requirements before enabling the composite build.
+
+
+## Baseline verification automation
+
+- `scripts/verify-upstream-baseline.sh` initializes all four submodules, checks each exact commit, then runs the upstream Manager's debug unit tests and debug APK build.
+- `.github/workflows/verify-upstream-baseline.yml` runs that script on pushes to this integration branch and can also be dispatched manually.
+- The workflow uploads the upstream debug APK only if tests and assembly succeed.
+
+This is a source-baseline verification job, not yet the VYRA-branded application build. Its first run must be inspected for missing SDK/NDK components, dependency repository permissions, and toolchain issues. The upstream manager's own CI explicitly passes a GitHub token to resolve Morphe's package registry; the VYRA repository token may not have cross-owner package access. The source composite builds are pinned to avoid the primary patcher artifact dependency, but other private package dependencies may still require a permitted source or credential path.
