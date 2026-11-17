@@ -7,6 +7,7 @@ import kotlin.test.assertTrue
 class VyraCatalogRepositoryTest {
     private fun candidate(
         appStatus: String = "candidate",
+        patchStatus: String = "verified",
         validationStatus: String = "passed",
         sourceListedForApp: Boolean = true,
         sourceId: String = "morphe-official",
@@ -21,6 +22,7 @@ class VyraCatalogRepositoryTest {
         appName = "YouTube",
         packageName = "com.google.android.youtube",
         appStatus = appStatus,
+        patchStatus = patchStatus,
         validationStatus = validationStatus,
         sourceListedForApp = sourceListedForApp,
         sourceId = sourceId,
@@ -61,6 +63,17 @@ class VyraCatalogRepositoryTest {
         )
     }
 
+
+    @Test
+    fun `candidate patch record remains blocked even when app is verified`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                patchStatus = "candidate",
+                execution = "enabled"
+            ).canImport
+        )
+    }
 
     @Test
     fun `catalog validation must pass before import`() {
