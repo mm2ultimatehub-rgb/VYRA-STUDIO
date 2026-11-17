@@ -318,6 +318,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
     var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
     var catalogPatchMatches by remember(selectedApk) { mutableStateOf<List<Triple<String, String, PatchEntry>>>(emptyList()) }
     var catalogLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var downloadingPatchId by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var bundleInspectionMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    val patcherScope = rememberCoroutineScope()
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -414,9 +417,45 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
         catalogPatchMatches.forEach { (publisher, sourceStatus, patch) ->
             InfoCard(
                 title = patch.name,
-                body = "Publisher: $publisher\nTarget: ${patch.targetPackage}\nExact app versions: ${patch.targetVersions.sorted().joinToString(", ")}\nSource status: $sourceStatus\nSHA-256: ${patch.artifactSha256}\nBundle download and patch execution are not enabled in this build.",
+                body = "Publisher: $publisher\nTarget: ${patch.targetPackage}\nExact app versions: ${patch.targetVersions.sorted().joinToString(", ")}\nSource status: $sourceStatus\nSHA-256: ${patch.artifactSha256}\nThe bundle can be downloaded for inspection only; patch execution is disabled.",
             )
+            Button(
+                onClick = {
+                    patcherScope.launch {
+                        downloadingPatchId = patch.id
+                        bundleInspectionMessage = null
+                        try {
+                            val inspected = withContext(Dispatchers.IO) {
+                                val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                val metadata = MppBundleInspector().inspect(file)
+                                file to metadata
+                            }
+                            val metadata = inspected.second
+                            bundleInspectionMessage = buildString {
+                                appendLine("Verified download: ${inspected.first.name}")
+                                appendLine("SHA-256: ${patch.artifactSha256}")
+                                appendLine("MPP name: ${metadata.name ?: "Not declared"}")
+                                appendLine("MPP version: ${metadata.version ?: "Not declared"}")
+                                appendLine("Author: ${metadata.author ?: "Not declared"}")
+                                appendLine("License: ${metadata.license ?: "Not declared"}")
+                                appendLine("DEX entries: ${metadata.dexEntryCount}")
+                                append("Inspection only — no patch code was executed.")
+                            }
+                        } catch (failure: Exception) {
+                            bundleInspectionMessage = "Download or inspection failed: ${failure.message ?: "unknown error"}"
+                        } finally {
+                            downloadingPatchId = null
+                        }
+                    }
+                },
+                enabled = downloadingPatchId == null,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Text(if (downloadingPatchId == patch.id) "Downloading and checking…" else "Download and inspect MPP")
+            }
         }
+        bundleInspectionMessage?.let { InfoCard("MPP bundle inspection", it) }
         InfoCard("2. Compatibility", "VYRA checks the package name and exact version name against the central catalog and saved sources. A match only confirms listed compatibility; it does not mean the patch was applied or tested on a device.")
         InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
     }
