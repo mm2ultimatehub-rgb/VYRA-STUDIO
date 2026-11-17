@@ -71,6 +71,7 @@ import studio.vyra.app.repository.PatchEntry
 import studio.vyra.app.repository.PatchRepository
 import studio.vyra.app.repository.RepositoryClient
 import studio.vyra.app.repository.RepositorySourceStore
+import studio.vyra.app.catalog.VyraCatalogPatchProvider
 import studio.vyra.app.ui.theme.VyraTheme
 
 class MainActivity : ComponentActivity() {
@@ -273,6 +274,14 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
             val client = RepositoryClient()
             val urls = withContext(Dispatchers.IO) { store.getUrls() }
             val matches = mutableListOf<Pair<String, PatchEntry>>()
+            try {
+                val centralMatches = withContext(Dispatchers.IO) {
+                    VyraCatalogPatchProvider().fetchCompatible(apk)
+                }
+                matches += centralMatches
+            } catch (_: Exception) {
+                // A central catalog outage must not prevent locally configured sources from working.
+            }
             for (sourceUrl in urls) {
                 try {
                     val repository = withContext(Dispatchers.IO) { client.fetch(sourceUrl) }
