@@ -19,4 +19,5 @@ data class PatchEntry(
     val artifactUrl: String,
     val artifactSha256: String,
     val format: String,
+    val targetVersions: Set<String> = emptySet(),
 )
