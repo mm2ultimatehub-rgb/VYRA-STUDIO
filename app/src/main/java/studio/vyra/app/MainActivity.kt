@@ -373,7 +373,7 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                             val label = metadata.name ?: file.name
                             val version = metadata.version?.let { " v$it" }.orEmpty()
                             artifactStatuses = artifactStatuses + (
-                                patch.id to "SHA-256 verified · MPP inspected: $label$version · ${metadata.dexEntryCount} DEX entr(y/ies). Ready for engine import."
+                                patch.id to "SHA-256 verified · MPP inspected: $label$version · ${metadata.dexEntryCount} DEX entr(y/ies). Verified locally; engine import is not connected yet."
                             )
                         } catch (error: Exception) {
                             artifactStatuses = artifactStatuses + (patch.id to (error.message ?: "Artifact verification failed."))
