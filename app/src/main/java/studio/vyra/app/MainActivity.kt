@@ -306,7 +306,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                     VyraCatalogPatchProvider().fetchCompatible(apk)
                 }
                 matches += centralMatches
-            } catch (cancel: kotlinx.coroutines.CancellationException) {\n                throw cancel\n            } catch (_: Exception) {
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
                 // A central catalog outage must not prevent locally configured sources from working.
             }
             for (sourceUrl in urls) {
@@ -314,7 +316,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                     val repository = withContext(Dispatchers.IO) { client.fetch(sourceUrl) }
                     repository.patches.filter { PatchCompatibility.matches(it, apk) }
                         .forEach { matches += repository.name to it }
-                } catch (cancel: kotlinx.coroutines.CancellationException) {\n                throw cancel\n            } catch (_: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
                     // A failed source is reported in the Sources screen; other sources remain usable.
                 }
             }
