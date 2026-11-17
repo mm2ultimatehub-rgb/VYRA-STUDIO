@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
-import java.util.jar.JarFile
 
 /**
  * Imports a catalog-downloaded MPP into Morphe's local bundle repository.
@@ -43,7 +42,7 @@ class VyraLocalBundleImporter(
             "The patch bundle is empty or exceeds the 50 MB limit."
         }
 
-        inspectMppArchive(file)
+        MppArchiveValidator.inspect(file)
 
         val actualSha256 = withContext(Dispatchers.IO) {
             file.inputStream().buffered().use { input ->
@@ -73,35 +72,6 @@ class VyraLocalBundleImporter(
         )
     }
 
-    private fun inspectMppArchive(file: File) {
-        JarFile(file, false).use { jar ->
-            require(jar.manifest != null) { "The patch bundle has no JAR manifest." }
-
-            var entries = 0
-            var dexEntries = 0
-            var expandedBytes = 0L
-            val enumeration = jar.entries()
-            while (enumeration.hasMoreElements()) {
-                val entry = enumeration.nextElement()
-                entries++
-                require(entries <= MAX_ARCHIVE_ENTRIES) {
-                    "The patch bundle contains too many archive entries."
-                }
-                require(!entry.name.startsWith("/") && !entry.name.split('/').contains("..")) {
-                    "The patch bundle contains an unsafe archive path."
-                }
-                if (entry.name.endsWith(".dex", ignoreCase = true)) dexEntries++
-                if (entry.size > 0L) {
-                    require(entry.size <= MAX_EXPANDED_BYTES - expandedBytes) {
-                        "The patch bundle expands beyond the 250 MB safety limit."
-                    }
-                    expandedBytes += entry.size
-                }
-            }
-
-            require(dexEntries > 0) { "The patch bundle contains no DEX payload." }
-        }
-    }
 
     private companion object {
         const val MAX_BUNDLE_BYTES = 50L * 1024L * 1024L
