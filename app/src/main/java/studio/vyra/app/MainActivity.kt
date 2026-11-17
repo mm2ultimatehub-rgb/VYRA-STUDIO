@@ -64,6 +64,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
+import studio.vyra.app.apk.InstalledAppApkProvider
+import studio.vyra.app.apk.InstalledApkResult
 import studio.vyra.app.repository.PatchArtifactDownloader
 import studio.vyra.app.repository.PatchCompatibility
 import studio.vyra.app.repository.MppBundleInspector
@@ -173,6 +175,7 @@ private fun VyraApp() {
                 onChooseApk = {
                     apkPicker.launch(arrayOf("application/vnd.android.package-archive"))
                 },
+                onUseInstalledApk = { selectedApk = it },
             )
             VyraTab.SOURCES -> SourcesScreen(innerPadding)
             VyraTab.BUILDS -> BuildsScreen(innerPadding)
@@ -256,7 +259,7 @@ private fun StoreScreen(padding: PaddingValues, onSelectApp: (CatalogApp) -> Uni
 }
 
 @Composable
-private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTarget: CatalogApp?, onChooseApk: () -> Unit) {
+private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTarget: CatalogApp?, onChooseApk: () -> Unit, onUseInstalledApk: (Uri) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
@@ -267,6 +270,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
     var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
     var downloadingArtifactId by remember(selectedApk) { mutableStateOf<String?>(null) }
     var artifactStatuses by remember(selectedApk) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var installedApkStatus by remember(selectedTarget) { mutableStateOf<String?>(null) }
+    var isCopyingInstalledApk by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -341,6 +346,36 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
         InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
         Button(onClick = onChooseApk, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
             Text(if (selectedApk == null) "Choose APK file" else "Choose another APK")
+        }
+        if (selectedTarget != null) {
+            Button(
+                onClick = {
+                    val target = selectedTarget
+                    if (target != null) {
+                        scope.launch {
+                            isCopyingInstalledApk = true
+                            installedApkStatus = null
+                            val result = withContext(Dispatchers.IO) {
+                                InstalledAppApkProvider(context).copyBaseApk(target.packageName)
+                            }
+                            when (result) {
+                                is InstalledApkResult.Available -> {
+                                    installedApkStatus = "Copied installed ${result.label} APK into VYRA's private cache."
+                                    onUseInstalledApk(result.uri)
+                                }
+                                is InstalledApkResult.Unavailable -> installedApkStatus = result.reason
+                            }
+                            isCopyingInstalledApk = false
+                        }
+                    }
+                },
+                enabled = !isCopyingInstalledApk,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Text(if (isCopyingInstalledApk) "Preparing installed app…" else "Use installed app")
+            }
+            installedApkStatus?.let { InfoCard("Installed app", it) }
         }
         when {
             isInspecting -> InfoCard("Inspecting APK", "Reading package metadata and calculating SHA-256 fingerprints…")
