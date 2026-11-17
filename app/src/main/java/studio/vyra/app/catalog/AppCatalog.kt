@@ -23,9 +23,9 @@ object AppCatalog {
         CatalogApp("Spotify", "com.spotify.music", CatalogAvailability.COMMUNITY),
         CatalogApp("Facebook", "com.facebook.katana", CatalogAvailability.COMMUNITY),
         CatalogApp("X", "com.twitter.android", CatalogAvailability.COMMUNITY),
-        CatalogApp("Threads", " com.instagram.barcelona", CatalogAvailability.COMMUNITY),
+        CatalogApp("Threads", "com.instagram.barcelona", CatalogAvailability.COMMUNITY),
         CatalogApp("Twitch", "tv.twitch.android.app", CatalogAvailability.COMMUNITY),
-        CatalogApp("Pinterest", " com.pinterest", CatalogAvailability.COMMUNITY),
+        CatalogApp("Pinterest", "com.pinterest", CatalogAvailability.COMMUNITY),
         CatalogApp("Messenger", "com.facebook.orca", CatalogAvailability.COMMUNITY),
     )
 }
