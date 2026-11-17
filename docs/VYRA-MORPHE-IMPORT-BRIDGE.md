@@ -51,6 +51,10 @@ Morphe unit tests and debug APK build.
 The overlay modifies only the CI working copy of the submodule. It does not
 change the pinned upstream commit or write to the Morphe upstream repository.
 
+The upstream verification workflow also downloads the official Morphe 2.3.0 MPP
+into its ephemeral workspace, verifies its pinned SHA-256, and runs the archive
+validator against that real release artifact. The binary is not committed to VYRA.
+
 ## Licensing and attribution
 
 Morphe Manager remains GPL-3.0. Its upstream license, NOTICE file, copyright
