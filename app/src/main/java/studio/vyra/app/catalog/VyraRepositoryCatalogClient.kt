@@ -41,9 +41,9 @@ class VyraRepositoryCatalogClient {
         val appsUrl = checkedCatalogUrl(catalog.getString("apps"))
         val sourcesUrl = checkedCatalogUrl(catalog.getString("patchSources"))
 
-        val appIndex = JSONObject(getJson(appsUrl))
+        val appIndex = JSONObject(getJson(appsUrl.toString()))
         require(appIndex.optInt("schemaVersion", -1) == 1) { "Unsupported app catalog schema." }
-        val sourceIndex = JSONObject(getJson(sourcesUrl))
+        val sourceIndex = JSONObject(getJson(sourcesUrl.toString()))
         require(sourceIndex.optInt("schemaVersion", -1) == 1) { "Unsupported patch-source schema." }
 
         val sources = parseSources(sourceIndex.getJSONArray("sources"))
@@ -76,7 +76,7 @@ class VyraRepositoryCatalogClient {
                 val recordName = item.required("appRecord")
                 require(RECORD_PATTERN.matches(recordName)) { "Invalid app record path." }
                 val recordUrl = indexUrl.substringBeforeLast('/') + "/" + recordName
-                val record = JSONObject(getJson(checkedCatalogUrl(recordUrl)))
+                val record = JSONObject(getJson(checkedCatalogUrl(recordUrl).toString()))
                 require(record.optInt("schemaVersion", -1) == 1) { "Unsupported app record schema for $id." }
                 require(record.required("id") == id && record.required("packageName") == packageName) {
                     "App record identity mismatch for $id."
