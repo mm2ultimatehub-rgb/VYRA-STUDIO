@@ -68,6 +68,15 @@ class MppArchiveValidatorTest {
         }
     }
 
+
+    @Test
+    fun `validates the pinned official Morphe release when CI provides it`() {
+        val fixturePath = System.getProperty("vyra.test.mpp") ?: return
+        val fixture = File(fixturePath)
+        assertTrue(fixture.isFile, "CI-provided official MPP fixture is missing.")
+        MppArchiveValidator.inspect(fixture)
+    }
+
     private fun archive(vararg entries: Pair<String, ByteArray>): File {
         val file = File.createTempFile("vyra-mpp-test-", ".mpp")
         val manifest = Manifest().apply {
