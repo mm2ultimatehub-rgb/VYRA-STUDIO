@@ -24,6 +24,8 @@ done
 
 bash "$ROOT/scripts/apply-vyra-morphe-overlay.sh"
 
+bash "$ROOT/scripts/validate-vyra-branding.sh"
+
 # Validate the archive guard against the actual official Morphe release artifact.
 # The bundle is downloaded only into the ephemeral CI workspace and is not committed.
 FIXTURE_DIR="$ROOT/.ci-fixtures"
