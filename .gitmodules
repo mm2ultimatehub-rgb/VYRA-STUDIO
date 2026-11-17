@@ -4,3 +4,9 @@
 [submodule "upstream/morphe-patcher"]
 	path = upstream/morphe-patcher
 	url = https://github.com/MorpheApp/morphe-patcher.git
+[submodule "upstream/ARSCLib"]
+	path = upstream/ARSCLib
+	url = https://github.com/MorpheApp/ARSCLib.git
+[submodule "upstream/smali"]
+	path = upstream/smali
+	url = https://github.com/MorpheApp/smali.git
