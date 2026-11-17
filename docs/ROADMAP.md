@@ -38,7 +38,8 @@
 ## Phase 2A — App-first discovery catalog
 - [x] Research official Morphe patches and community patch sources.
 - [x] Record initial social/media app targets and source provenance in docs/APP-AND-PATCH-CATALOG-RESEARCH.md.
-- [ ] Implement package-name-based app catalog and source discovery adapters.
+- [x] Add the first package-name-based app catalog to the Store UI (catalog preview only; live discovery adapters remain open).
+- [ ] Implement live source discovery adapters.
 - [ ] Add exact app-version and bundle compatibility resolution.
 - [ ] Add a trusted APK acquisition resolver separate from patch-bundle discovery.
 - [ ] Verify each app/version on-device before marking it stable.
@@ -51,7 +52,15 @@
 - [x] Inspect downloaded MPP JAR manifests and DEX entry structure without loading or executing patch code.
 - [ ] Add build logs, validation, and artifact export.
 
-## Phase 4 — Creator and release quality
+## Phase 4 — Self-update and release quality
+- [x] Research Morphe Manager self-update and background patch-source update architecture.
+- [x] Document VYRA self-update requirements in docs/UPDATE-SYSTEM.md.
+- [ ] Publish signed/reproducible VYRA release metadata and APK assets.
+- [ ] Implement in-app update checks, release notes, and checksum-verified APK download.
+- [ ] Add configurable WorkManager background checks and update notifications.
+- [ ] Verify Android installer handoff and update-over-existing-install behavior.
+
+## Phase 5 — Creator and release quality
 - [ ] Add patch authoring and manifest validation.
 - [ ] Add package integrity checks and signing guidance.
 - [ ] Add release automation.
