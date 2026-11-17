@@ -4,6 +4,7 @@
  */
 package app.morphe.manager.ui.screen.vyra
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,6 +31,7 @@ import org.koin.compose.koinInject
 @Composable
 fun VyraStorePage(
     bottomBarHeight: androidx.compose.ui.unit.Dp = 0.dp,
+    onAppSelected: (String) -> Unit = {},
     repository: VyraCatalogRepository = koinInject()
 ) {
     var apps by remember { mutableStateOf<List<VyraCatalogRepository.StoreApp>>(emptyList()) }
@@ -86,8 +88,11 @@ fun VyraStorePage(
             }
         }
         items(apps, key = { it.packageName }) { app ->
+            val selectable = app.status != "unsupported"
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = selectable) { onAppSelected(app.packageName) },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -107,6 +112,11 @@ fun VyraStorePage(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        if (selectable) "Tap to open patch options" else "No patch source is listed yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -121,7 +131,7 @@ fun VyraStorePage(
         }
         item {
             Text(
-                "To patch an installed app, return to Apps and select that app. The engine checks the installed version and available patch bundles before proceeding.",
+                "Selecting an app opens the engine's patch flow. Compatibility is checked against the exact APK version before patching.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp)
