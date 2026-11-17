@@ -50,3 +50,14 @@ No claim of real patching support is permitted until an actual compatible patch 
 ## Legal and distribution gate
 
 This is a GPL-3.0-derived codebase. Before distributing builds, preserve notices and source history as required, mark VYRA modifications and dates, publish the corresponding source under the applicable license terms, display appropriate legal notices, and audit bundled dependencies/assets separately. This checklist is not legal advice.
+
+
+## Pinned source checkout
+
+The upstream repository is also recorded as a Git submodule at `upstream/morphe-manager`. Its gitlink is pinned to the exact commit above, not to a branch tip. A full local checkout therefore uses:
+
+```bash
+git clone --branch integration/morphe-baseline --recurse-submodules https://github.com/mm2ultimatehub-rgb/VYRA-STUDIO.git
+```
+
+The submodule is a provenance/source-staging step only. The current VYRA Android build does not yet consume or compile it. Do not describe the patch engine as integrated until the Gradle project, Android service/runtime, patch bundle execution, signing and device validation are connected and tested.
