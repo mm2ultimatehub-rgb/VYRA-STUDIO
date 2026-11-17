@@ -1,0 +1,54 @@
+name: Verify VYRA app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - integration/vyra-engine-foundation
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/verify-vyra-app.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vyra-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Run unit tests
+        run: gradle :app:testDebugUnitTest
+
+      - name: Build VYRA debug APK
+        run: gradle :app:assembleDebug
+
+      - name: Upload VYRA debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyra-studio-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
