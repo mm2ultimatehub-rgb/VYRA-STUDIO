@@ -51,11 +51,17 @@ jobs:
           _JAVA_OPTIONS: "-Djava.awt.headless=true"
         run: bash scripts/verify-upstream-baseline.sh
 
-      - name: Upload upstream debug APK
+      - name: Prepare VYRA engine APK
+        if: success()
+        run: |
+          mkdir -p "$RUNNER_TEMP/vyra-artifacts"
+          cp upstream/morphe-manager/app/build/outputs/apk/debug/*.apk "$RUNNER_TEMP/vyra-artifacts/VYRA-Studio-engine-debug.apk"
+
+      - name: Upload VYRA engine APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: vyra-studio-engine-debug
-          path: upstream/morphe-manager/app/build/outputs/apk/debug/*.apk
+          path: ${{ runner.temp }}/vyra-artifacts/VYRA-Studio-engine-debug.apk
           if-no-files-found: error
           retention-days: 7
