@@ -1,3 +1,6 @@
 [submodule "upstream/morphe-manager"]
 	path = upstream/morphe-manager
 	url = https://github.com/MorpheApp/morphe-manager.git
+[submodule "upstream/morphe-patcher"]
+	path = upstream/morphe-patcher
+	url = https://github.com/MorpheApp/morphe-patcher.git
