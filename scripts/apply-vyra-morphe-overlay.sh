@@ -90,14 +90,22 @@ flow_hook = """        // VYRA may supply a compatible source when Morphe has no
         val existingForVersion = patchBundleRepository
             .scopedBundleInfoFlow(selectedApp.packageName, selectedApp.version, selectedApp.versionCode)
             .first()
+        // scopedBundleInfoFlow includes empty per-source scopes, so checking list.isEmpty()
+        // would incorrectly suppress catalog discovery whenever any source is installed.
+        val hasUsableExistingPatches = existingForVersion.any {
+            it.compatible.isNotEmpty() || it.universal.isNotEmpty()
+        }
         val selectedVersion = selectedApp.version
-        if (existingForVersion.isEmpty() && !selectedVersion.isNullOrBlank()) {
+        if (!hasUsableExistingPatches && !selectedVersion.isNullOrBlank()) {
             runCatching {
-                vyraCatalogRepository.findCompatible(selectedApp.packageName, selectedVersion)
-                    .filter { it.canImport }
-                    .forEach { candidate ->
-                        vyraCatalogRepository.downloadAndImport(candidate, app.cacheDir)
-                    }
+                val candidates = vyraCatalogRepository.findCompatible(selectedApp.packageName, selectedVersion)
+                val eligible = candidates.filter { it.canImport }
+                if (candidates.isNotEmpty() && eligible.isEmpty()) {
+                    Log.i("PatchFlow", "VYRA found compatible catalog entries, but all are blocked by review policy")
+                }
+                eligible.forEach { candidate ->
+                    vyraCatalogRepository.downloadAndImport(candidate, app.cacheDir)
+                }
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 Log.w("PatchFlow", "VYRA catalog lookup/import was skipped", error)
