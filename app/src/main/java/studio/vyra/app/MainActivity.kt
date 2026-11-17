@@ -72,6 +72,7 @@ import studio.vyra.app.repository.PatchRepository
 import studio.vyra.app.repository.RepositoryClient
 import studio.vyra.app.repository.RepositorySourceStore
 import studio.vyra.app.catalog.VyraCatalogPatchProvider
+import studio.vyra.app.catalog.CatalogApp
 import studio.vyra.app.ui.theme.VyraTheme
 
 class MainActivity : ComponentActivity() {
@@ -102,6 +103,7 @@ private enum class VyraTab(
 private fun VyraApp() {
     var selectedTab by remember { mutableStateOf(VyraTab.OVERVIEW) }
     var selectedApk by remember { mutableStateOf<Uri?>(null) }
+    var selectedTarget by remember { mutableStateOf<CatalogApp?>(null) }
 
     val apkPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -156,11 +158,18 @@ private fun VyraApp() {
                 onOpenCreator = { selectedTab = VyraTab.CREATOR },
                 onOpenSources = { selectedTab = VyraTab.SOURCES },
             )
-            VyraTab.STORE -> StoreScreen(innerPadding)
+            VyraTab.STORE -> StoreScreen(
+                padding = innerPadding,
+                onSelectApp = { app ->
+                    selectedTarget = app
+                    selectedTab = VyraTab.PATCHER
+                },
+            )
             VyraTab.CREATOR -> CreatorScreen(innerPadding)
             VyraTab.PATCHER -> PatcherScreen(
                 padding = innerPadding,
                 selectedApk = selectedApk,
+                selectedTarget = selectedTarget,
                 onChooseApk = {
                     apkPicker.launch(arrayOf("application/vnd.android.package-archive"))
                 },
@@ -221,7 +230,7 @@ private fun OverviewScreen(
 }
 
 @Composable
-private fun StoreScreen(padding: PaddingValues) {
+private fun StoreScreen(padding: PaddingValues, onSelectApp: (CatalogApp) -> Unit) {
     PageColumn(padding) {
         PageHeading("Vyra Store", "Discover apps with known patch-source coverage.")
         InfoCard(
@@ -233,6 +242,11 @@ private fun StoreScreen(padding: PaddingValues) {
                 app.name,
                 "${app.packageName}\n${app.availability.label}\n${app.availability.detail}",
             )
+            Button(
+                onClick = { onSelectApp(app) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) { Text("Select app") }
         }
         InfoCard(
             "Safety and compatibility",
@@ -242,7 +256,7 @@ private fun StoreScreen(padding: PaddingValues) {
 }
 
 @Composable
-private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk: () -> Unit) {
+private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTarget: CatalogApp?, onChooseApk: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
@@ -307,6 +321,9 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
 
     PageColumn(padding) {
         PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
+        selectedTarget?.let { target ->
+            InfoCard("Selected app: ${target.name}", "${target.packageName}\n${target.availability.label}")
+        }
         InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
         Button(onClick = onChooseApk, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
             Text(if (selectedApk == null) "Choose APK file" else "Choose another APK")
@@ -314,7 +331,12 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
         when {
             isInspecting -> InfoCard("Inspecting APK", "Reading package metadata and calculating SHA-256 fingerprints…")
             inspectionError != null -> InfoCard("Inspection failed", inspectionError ?: "Unknown inspection error.")
-            inspection != null -> ApkDetailsCard(inspection!!)
+            inspection != null -> {
+                ApkDetailsCard(inspection!!)
+                if (selectedTarget != null && inspection!!.packageName != selectedTarget.packageName) {
+                    InfoCard("App mismatch", "You selected ${selectedTarget.name}, but this APK is ${inspection!!.appLabel}. Choose the correct APK before continuing.")
+                }
+            }
         }
         when {
             isCheckingPatches -> InfoCard("Checking compatibility", "Comparing this APK with saved repository indexes…")
