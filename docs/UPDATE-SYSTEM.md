@@ -28,4 +28,15 @@ It also schedules periodic background checks with WorkManager and can show notif
 
 ## Current status
 
-This document is an implementation plan. The current VYRA shell does not yet contain a working self-updater, release metadata endpoint, download flow, checksum verification UI, or update worker.
+Implemented:
+- A toolbar action checks the latest stable GitHub Release on demand.
+- The checker ignores draft/prerelease releases, compares the release tag with the installed version, and only accepts recognized APK asset names hosted on GitHub HTTPS domains.
+- The result screen displays version, release notes, file size, and the SHA-256 digest when GitHub exposes one.
+
+Not implemented yet:
+- APK download and local SHA-256 verification.
+- Android PackageInstaller handoff and install-result handling.
+- Background/periodic checks, notifications, and update-policy preferences.
+- A published VYRA Release containing a correctly named signed APK. Until that exists, the checker may report that no stable release is available.
+
+The displayed GitHub digest is release metadata only; VYRA must still hash the downloaded APK and compare it before installation.
