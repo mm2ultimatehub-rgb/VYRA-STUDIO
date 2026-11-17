@@ -24,8 +24,11 @@ class VyraCatalogRepository(
         val appName: String,
         val packageName: String,
         val appStatus: String,
+        val validationStatus: String,
+        val sourceListedForApp: Boolean,
         val sourceId: String,
         val publisher: String,
+        val repository: String,
         val trust: String,
         val execution: String,
         val releaseVersion: String,
@@ -35,6 +38,12 @@ class VyraCatalogRepository(
     ) {
         val canImport: Boolean
             get() = appStatus == "verified" &&
+                validationStatus == "passed" &&
+                sourceListedForApp &&
+                sourceId == "morphe-official" &&
+                publisher == "MorpheApp" &&
+                repository == "https://github.com/MorpheApp/morphe-patches" &&
+                artifactUrl.startsWith("https://github.com/MorpheApp/morphe-patches/releases/download/") &&
                 trust == "official-publisher" &&
                 execution == "enabled" &&
                 targetVersions.isNotEmpty()
@@ -67,12 +76,15 @@ class VyraCatalogRepository(
                         record.optString("packageName") == packageName) {
                         "VYRA app record identity mismatch."
                     }
+                    val allowedSourceIds = app.optJSONArray("patchSourceIds").stringValues().toSet()
+                    val validationStatus = record.optJSONObject("validation")?.optString("status", "not-tested") ?: "not-tested"
                     val patchSources = record.optJSONArray("patchSources") ?: JSONArray()
                     for (j in 0 until patchSources.length()) {
                         val patch = patchSources.getJSONObject(j)
                         val versions = patch.optJSONArray("targetVersions").stringValues()
                         if (versionName !in versions) continue
                         val sourceId = patch.optString("sourceId")
+                        if (sourceId !in allowedSourceIds) continue
                         val source = sources[sourceId] ?: continue
                         val release = source.optJSONObject("latestRelease") ?: continue
                         val artifactUrl = release.optString("assetUrl")
@@ -85,8 +97,11 @@ class VyraCatalogRepository(
                                 appName = app.optString("name"),
                                 packageName = packageName,
                                 appStatus = app.optString("status", "unsupported"),
+                                validationStatus = validationStatus,
+                                sourceListedForApp = sourceId in allowedSourceIds,
                                 sourceId = sourceId,
                                 publisher = source.optString("publisher"),
+                                repository = source.optString("repository"),
                                 trust = source.optString("trust", "unverified"),
                                 execution = source.optString("execution", "disabled"),
                                 releaseVersion = release.optString("version"),
