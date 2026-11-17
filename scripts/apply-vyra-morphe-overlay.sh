@@ -85,7 +85,7 @@ store_entry = "    VYRA_STORE(R.string.vyra_store, MaterialSymbols.Rounded.Apps)
 if store_entry not in navigation_text:
     if navigation_text.count(settings_entry) != 1:
         raise SystemExit("ERROR: MainPage enum changed; refusing unsafe Store navigation edit.")
-    navigation_text = navigation_text.replace(settings_entry, settings_entry + ",\\n" + store_entry, 1)
+    navigation_text = navigation_text.replace(settings_entry, settings_entry + ",\n" + store_entry, 1)
 main_navigation.write_text(navigation_text, encoding="utf-8")
 
 home_text_ui = home_screen.read_text(encoding="utf-8")
@@ -94,19 +94,19 @@ if store_import not in home_text_ui:
     anchor = "import app.morphe.manager.ui.screen.shared.AppPullToRefreshBox"
     if anchor not in home_text_ui:
         raise SystemExit("ERROR: HomeScreen imports changed; refusing unsafe Store page edit.")
-    home_text_ui = home_text_ui.replace(anchor, store_import + "\\n" + anchor, 1)
+    home_text_ui = home_text_ui.replace(anchor, store_import + "\n" + anchor, 1)
 
 nav_covered_anchor = "                MainPage.SETTINGS -> false"
 if "MainPage.VYRA_STORE -> false" not in home_text_ui:
     if home_text_ui.count(nav_covered_anchor) != 1:
         raise SystemExit("ERROR: HomeScreen navigationCovered cases changed; refusing unsafe Store page edit.")
-    home_text_ui = home_text_ui.replace(nav_covered_anchor, nav_covered_anchor + "\\n                MainPage.VYRA_STORE -> false", 1)
+    home_text_ui = home_text_ui.replace(nav_covered_anchor, nav_covered_anchor + "\n                MainPage.VYRA_STORE -> false", 1)
 
 page_anchor = "            MainPage.APPS -> AppPullToRefreshBox("
 if "MainPage.VYRA_STORE -> VyraStorePage" not in home_text_ui:
     if home_text_ui.count(page_anchor) != 1:
         raise SystemExit("ERROR: HomeScreen page cases changed; refusing unsafe Store page edit.")
-    home_text_ui = home_text_ui.replace(page_anchor, "            MainPage.VYRA_STORE -> VyraStorePage(bottomBarHeight = bottomBarHeight)\\n\\n" + page_anchor, 1)
+    home_text_ui = home_text_ui.replace(page_anchor, "            MainPage.VYRA_STORE -> VyraStorePage(bottomBarHeight = bottomBarHeight)\n\n" + page_anchor, 1)
 home_screen.write_text(home_text_ui, encoding="utf-8")
 
 # Connect catalog discovery to the actual patch flow. Import is attempted only
@@ -204,7 +204,7 @@ if store_string not in strings_text:
     closing = "</resources>"
     if strings_text.count(closing) != 1:
         raise SystemExit("ERROR: unexpected strings.xml structure; refusing Store label edit.")
-    strings_text = strings_text.replace(closing, "    " + store_string + "\\n" + closing, 1)
+    strings_text = strings_text.replace(closing, "    " + store_string + "\n" + closing, 1)
 
 if new_app_name not in strings_text:
     if strings_text.count(old_app_name) != 1:
