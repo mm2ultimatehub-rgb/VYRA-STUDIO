@@ -244,6 +244,7 @@ private fun StoreScreen(padding: PaddingValues) {
 @Composable
 private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var inspection by remember(selectedApk) { mutableStateOf<ApkInspection?>(null) }
     var inspectionError by remember(selectedApk) { mutableStateOf<String?>(null) }
     var isInspecting by remember(selectedApk) { mutableStateOf(false) }
