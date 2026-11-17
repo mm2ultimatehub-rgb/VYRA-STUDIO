@@ -62,6 +62,63 @@ if catalog_registration not in text:
     text = text.replace(registration, registration + "\n" + catalog_registration, 1)
 
 path.write_text(text, encoding="utf-8")
+
+# Connect catalog discovery to the actual patch flow. Import is attempted only
+# when Morphe has no source for this exact app version, and the repository's
+# execution gate must approve the catalog entry before any MPP is imported.
+patch_flow = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/PatchFlow.kt"
+home_vm = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
+
+flow_text = patch_flow.read_text(encoding="utf-8")
+flow_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\\n"
+flow_anchor = "    private val patchBundleRepository: PatchBundleRepository,\\n"
+if flow_dependency not in flow_text:
+    if flow_anchor not in flow_text:
+        raise SystemExit("ERROR: PatchFlow constructor changed; refusing unsafe VYRA integration.")
+    flow_text = flow_text.replace(flow_anchor, flow_anchor + flow_dependency, 1)
+
+flow_hook = """        // VYRA may supply a compatible source when Morphe has none for this exact APK.
+        // Catalog entries remain blocked unless app status, publisher trust and execution policy
+        // all explicitly permit import; network or catalog failures never stop normal patching.
+        val existingForVersion = patchBundleRepository
+            .scopedBundleInfoFlow(selectedApp.packageName, selectedApp.version, selectedApp.versionCode)
+            .first()
+        if (existingForVersion.isEmpty() && selectedApp.version.isNotBlank()) {
+            runCatching {
+                vyraCatalogRepository.findCompatible(selectedApp.packageName, selectedApp.version)
+                    .filter { it.canImport }
+                    .forEach { candidate ->
+                        vyraCatalogRepository.downloadAndImport(candidate, app.cacheDir)
+                    }
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+                Log.w("PatchFlow", "VYRA catalog lookup/import was skipped", error)
+            }
+        }
+
+"""
+flow_marker = "        // Read before the first selection is resolved, so every rule below and every later edit"
+if "VYRA may supply a compatible source" not in flow_text:
+    if flow_marker not in flow_text:
+        raise SystemExit("ERROR: PatchFlow import point changed; refusing unsafe VYRA integration.")
+    flow_text = flow_text.replace(flow_marker, flow_hook + flow_marker, 1)
+patch_flow.write_text(flow_text, encoding="utf-8")
+
+home_text = home_vm.read_text(encoding="utf-8")
+home_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\\n"
+home_anchor = "    private val localApkSources: LocalApkSources,\\n"
+if home_dependency not in home_text:
+    if home_anchor not in home_text:
+        raise SystemExit("ERROR: HomeViewModel constructor changed; refusing unsafe VYRA integration.")
+    home_text = home_text.replace(home_anchor, home_anchor + home_dependency, 1)
+
+patchflow_anchor = "        patchBundleRepository = patchBundleRepository,\\n"
+patchflow_dependency = "        vyraCatalogRepository = vyraCatalogRepository,\\n"
+if patchflow_dependency not in home_text:
+    if patchflow_anchor not in home_text:
+        raise SystemExit("ERROR: HomeViewModel PatchFlow wiring changed; refusing unsafe VYRA integration.")
+    home_text = home_text.replace(patchflow_anchor, patchflow_anchor + patchflow_dependency, 1)
+home_vm.write_text(home_text, encoding="utf-8")
 PY
 
 echo "Applied VYRA local MPP import bridge to pinned Morphe Manager."
