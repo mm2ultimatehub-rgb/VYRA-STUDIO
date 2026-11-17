@@ -1,35 +1,31 @@
 # VYRA STUDIO
 
-An independent Android workspace for patch discovery, repository management, APK inspection, patch creation, and build orchestration.
+VYRA STUDIO is an Android APK patching project intended to use the Morphe Manager patching workflow as its functional baseline, with a distinct VYRA identity and lilac visual theme.
 
-## Current milestone
+## Product direction
 
-The native Android shell is built with Kotlin and Jetpack Compose.
+The goal is not to build an unrelated APK inspector. VYRA aims to provide a complete patching workflow: APK and split-APK import, compatible patch discovery, patch options, patch execution, progress/logging/cancellation, APK rebuild, signing, validation, and export.
 
-Implemented:
-- Dark-first Material 3 application shell with Overview, Store, Patcher, Creator, Sources, and Builds screens.
-- Android document picker for user-selected APK files.
-- Background APK inspection: package name, app label, version, min/target SDK, APK SHA-256, and signer certificate SHA-256 fingerprints.
-- Version 1 repository-index model and JSON parser with schema, package-name, version-range, HTTPS URL, SHA-256, and artifact-format validation.
-- Patch compatibility matching by package name and version-code range, with unit tests.
-- GitHub Actions workflow that runs unit tests and attempts a debug APK build on pushes and pull requests to `main`.
+The planned implementation strategy is documented in [Morphe Manager adoption plan](docs/UPSTREAM-ADOPTION-PLAN.md).
 
-Not implemented:
-- Remote repository fetching, refresh, and source-management UI.
-- Compatibility display in the Store/Patcher screens.
-- Patch-engine integration.
-- APK modification, re-signing, or patched APK export.
+## Current implementation status
 
-APK inspection is read-only. It copies the selected file to app-private cache temporarily, reads package metadata, computes fingerprints, and deletes the temporary copy. It does not modify the selected APK.
+The current repository is an early Kotlin/Jetpack Compose shell. It currently includes:
+- APK selection and read-only package/signing-certificate inspection;
+- repository index parsing and validation;
+- repository source management and HTTPS metadata fetching;
+- patch artifact download with SHA-256 verification;
+- non-executing MPP archive/manifest/DEX structure inspection;
+- unit tests and a GitHub Actions debug build workflow.
 
-The repository parser validates metadata only. It never executes patch code. HTTPS and a declared SHA-256 digest do not by themselves establish that a source is trustworthy.
+**Important:** the current shell does not apply patches, run the Morphe patcher runtime, rebuild or sign patched APKs, or export patched applications. A successful debug build only verifies that this shell compiles and its unit tests pass; it is not a working patcher release.
 
 ## Build
 
 Requirements:
 - JDK 17
-- Android SDK Platform 36 and Build Tools 36.0.0
-- Gradle 8.13
+- Android SDK Platform 36
+- Gradle 8.14.4
 
 Run from the repository root:
 
@@ -37,27 +33,20 @@ Run from the repository root:
 gradle testDebugUnitTest assembleDebug
 ```
 
-Output: `app/build/outputs/apk/debug/app-debug.apk`.
+The GitHub Actions workflow is defined at .github/workflows/android-ci.yml. See the repository Actions tab for verified build results and artifacts.
 
-The GitHub Actions workflow is defined at `.github/workflows/android-ci.yml`. A configured workflow is not proof of a successful build; check the repository's Actions tab for the latest run.
+## Research and architecture
 
-## Architecture and research
-
-- [Product scope](docs/PRODUCT.md)
+- [Morphe Manager adoption plan](docs/UPSTREAM-ADOPTION-PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Android-first decision](docs/decisions/0001-android-first.md)
-- [Repository index format v1](docs/REPOSITORY-INDEX-V1.md)
-- [Upstream patching research and license notes](docs/UPSTREAM-RESEARCH.md)
+- [Engine integration research](docs/ENGINE-INTEGRATION-RESEARCH.md)
+- [Upstream research and license notes](docs/UPSTREAM-RESEARCH.md)
 - [Roadmap](docs/ROADMAP.md)
 
-## Safety and licensing
+## Branding, licensing, and safety
 
-Only use APKs you are authorized to modify. VYRA does not distribute proprietary APKs. External patch sources must be treated as untrusted until reviewed and explicitly added by the user.
+VYRA will use its own name, lilac palette, icons, and product identity. It must not use Morphe's name, logos, or marks as VYRA branding.
 
-Morphe Patcher and Morphe Patches are GPL-3.0 projects with additional Section 7 conditions. No upstream engine or patch implementation is included in this application shell. Any future reuse must preserve notices and comply with the applicable license terms.
+Morphe Manager is published under GPL-3.0 with additional Section 7 conditions described in its upstream NOTICE. Any derivative implementation must preserve applicable notices, identify modifications, provide corresponding source, and satisfy the license conditions before distribution. Review all bundled dependencies and assets separately. This repository's adoption plan is an engineering checklist, not legal advice.
 
-
-## Current repository workflow
-VYRA can add HTTPS v1 repository indexes, retain source URLs locally, list patch metadata, and compare patch targets with an inspected APK. A user can explicitly download an MPP artifact; the app verifies its SHA-256 digest before retaining it in its private cache. Downloads are size-limited and redirects are rejected.
-
-**Not implemented yet:** applying patches, executing patch payloads, rebuilding/signing APKs, or exporting patched applications. A verified download is not a successful patch build.
+Only modify APKs you are authorized to modify. Do not distribute proprietary APKs or signing keys. Treat patch bundles as executable code: inspect provenance, verify integrity, and only run trusted bundles in the patcher runtime.
