@@ -149,25 +149,15 @@ if patchflow_dependency not in home_text:
     home_text = home_text[:start] + block + home_text[end:]
 home_vm.write_text(home_text, encoding="utf-8")
 
-# Give the engine build its own VYRA application identity so it can coexist
-# with upstream Morphe and the separate VYRA shell during integration testing.
+# Keep the upstream application ID for the engine build because the pinned
+# google-services.json contains Firebase clients only for app.morphe.manager
+# and app.morphe.manager.debug. VYRA branding is applied through the launcher
+# label; changing the package ID without an authorized Firebase client would
+# break the build and could break Firebase-backed runtime features.
 gradle_text = app_gradle.read_text(encoding="utf-8")
-old_application_id = 'applicationId = "app.morphe.manager"'
-new_application_id = 'applicationId = "studio.vyra.studio.engine"'
-if new_application_id not in gradle_text:
-    if gradle_text.count(old_application_id) != 1:
-        raise SystemExit("ERROR: unexpected Morphe applicationId declaration; refusing unsafe branding edit.")
-    gradle_text = gradle_text.replace(old_application_id, new_application_id, 1)
-
-# The upstream debug build adds `.debug` to applicationId by default. The
-# pinned google-services.json is registered for the VYRA engine ID without
-# that suffix, so explicitly remove it for this isolated CI engine build.
-debug_suffix = '            applicationIdSuffix = ".debug"'
-if debug_suffix in gradle_text:
-    gradle_text = gradle_text.replace(debug_suffix, '            applicationIdSuffix = ""', 1)
-elif '            applicationIdSuffix = ""' not in gradle_text:
-    raise SystemExit("ERROR: unexpected Morphe debug applicationIdSuffix; refusing unsafe branding edit.")
-app_gradle.write_text(gradle_text, encoding="utf-8")
+expected_application_id = 'applicationId = "app.morphe.manager"'
+if gradle_text.count(expected_application_id) != 1:
+    raise SystemExit("ERROR: unexpected Morphe applicationId declaration; refusing unsafe build identity edit.")
 
 strings_text = strings_xml.read_text(encoding="utf-8-sig")
 old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
@@ -178,8 +168,8 @@ if new_app_name not in strings_text:
     strings_text = strings_text.replace(old_app_name, new_app_name, 1)
 strings_xml.write_text(strings_text, encoding="utf-8")
 
-if new_application_id not in app_gradle.read_text(encoding="utf-8"):
-    raise SystemExit("ERROR: VYRA engine applicationId was not applied.")
+if expected_application_id not in app_gradle.read_text(encoding="utf-8"):
+    raise SystemExit("ERROR: upstream Firebase-compatible applicationId was not preserved.")
 if new_app_name not in strings_xml.read_text(encoding="utf-8"):
     raise SystemExit("ERROR: VYRA engine launcher label was not applied.")
 PY
