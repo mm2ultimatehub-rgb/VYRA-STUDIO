@@ -1,8 +1,18 @@
 package studio.vyra.app.catalog
 
 enum class CatalogAvailability(val label: String, val detail: String) {
-    OFFICIAL("Official patch source", "Listed by the official Morphe patch collection; exact APK version compatibility must still be checked."),
-    COMMUNITY("Community sources", "Community bundles are listed; publisher, release integrity, and exact version compatibility must be verified."),
+    CANDIDATE(
+        "Candidate · not yet verified",
+        "A patch source is listed, but end-to-end patching and installation have not been validated. Automatic patch execution is disabled."
+    ),
+    EXPERIMENTAL(
+        "Experimental · use caution",
+        "Only experimental community metadata is listed. Compatibility and safety are not verified; automatic execution is disabled."
+    ),
+    NO_SOURCE(
+        "No compatible source listed",
+        "VYRA has no reviewed patch source for this app yet. You can still inspect a local APK."
+    ),
 }
 
 data class CatalogApp(
@@ -12,20 +22,21 @@ data class CatalogApp(
 )
 
 object AppCatalog {
+    // Keep this list honest: entries reflect the current VYRA repository catalog status.
     val apps = listOf(
-        CatalogApp("YouTube", "com.google.android.youtube", CatalogAvailability.OFFICIAL),
-        CatalogApp("YouTube Music", "com.google.android.apps.youtube.music", CatalogAvailability.OFFICIAL),
-        CatalogApp("Reddit", "com.reddit.frontpage", CatalogAvailability.OFFICIAL),
-        CatalogApp("Discord", "com.discord", CatalogAvailability.COMMUNITY),
-        CatalogApp("Instagram", "com.instagram.android", CatalogAvailability.COMMUNITY),
-        CatalogApp("TikTok", "com.zhiliaoapp.musically", CatalogAvailability.COMMUNITY),
-        CatalogApp("Telegram", "org.telegram.messenger", CatalogAvailability.COMMUNITY),
-        CatalogApp("Spotify", "com.spotify.music", CatalogAvailability.COMMUNITY),
-        CatalogApp("Facebook", "com.facebook.katana", CatalogAvailability.COMMUNITY),
-        CatalogApp("X", "com.twitter.android", CatalogAvailability.COMMUNITY),
-        CatalogApp("Threads", "com.instagram.barcelona", CatalogAvailability.COMMUNITY),
-        CatalogApp("Twitch", "tv.twitch.android.app", CatalogAvailability.COMMUNITY),
-        CatalogApp("Pinterest", "com.pinterest", CatalogAvailability.COMMUNITY),
-        CatalogApp("Messenger", "com.facebook.orca", CatalogAvailability.COMMUNITY),
+        CatalogApp("YouTube", "com.google.android.youtube", CatalogAvailability.CANDIDATE),
+        CatalogApp("YouTube Music", "com.google.android.apps.youtube.music", CatalogAvailability.CANDIDATE),
+        CatalogApp("Reddit", "com.reddit.frontpage", CatalogAvailability.CANDIDATE),
+        CatalogApp("Instagram", "com.instagram.android", CatalogAvailability.EXPERIMENTAL),
+        CatalogApp("TikTok", "com.zhiliaoapp.musically", CatalogAvailability.EXPERIMENTAL),
+        CatalogApp("Threads", "com.instagram.barcelona", CatalogAvailability.EXPERIMENTAL),
+        CatalogApp("X", "com.twitter.android", CatalogAvailability.EXPERIMENTAL),
+        CatalogApp("Discord", "com.discord", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Telegram", "org.telegram.messenger", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Spotify", "com.spotify.music", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Facebook", "com.facebook.katana", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Twitch", "tv.twitch.android.app", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Pinterest", "com.pinterest", CatalogAvailability.NO_SOURCE),
+        CatalogApp("Messenger", "com.facebook.orca", CatalogAvailability.NO_SOURCE),
     )
 }
