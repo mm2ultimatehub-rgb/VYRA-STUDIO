@@ -1,5 +1,14 @@
 # VYRA STUDIO — Roadmap
 
+## Revised product direction — upstream-derived patcher
+- [x] Decide that VYRA should use the Morphe Manager patching system as its functional baseline, rather than remain a standalone APK inspector.
+- [x] Record the upstream adoption, runtime, branding, and license-compliance plan.
+- [ ] Pin and audit the exact upstream source revision, NOTICE, dependencies, embedded runtimes, and assets.
+- [ ] Establish a reproducible upstream-derived build baseline in the VYRA project.
+- [ ] Rebrand the app as VYRA STUDIO with a lilac theme and distinct icons/copy, preserving required upstream legal notices.
+- [ ] Verify APK/split-APK import, patch discovery/options, execution, progress/cancellation, rebuild, signing, and export end to end.
+
+
 ## Phase 0 — Product foundation
 - [x] Confirm repository and default branch.
 - [x] Record initial product scope.
