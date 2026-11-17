@@ -8,7 +8,7 @@ SOURCE="$ROOT/integration/morphe-overlay/VyraLocalBundleImporter.kt"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
 MODULE="$MANAGER/app/src/main/java/app/morphe/manager/di/RepositoryModule.kt"
 
-if [[ ! -d "$MANAGER/.git" ]]; then
+if ! git -C "$MANAGER" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "ERROR: Morphe Manager submodule is not initialized." >&2
   exit 1
 fi
