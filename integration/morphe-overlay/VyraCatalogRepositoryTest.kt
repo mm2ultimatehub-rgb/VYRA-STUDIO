@@ -32,7 +32,7 @@ class VyraCatalogRepositoryTest {
         execution = execution,
         releaseVersion = "2.3.0",
         artifactUrl = artifactUrl,
-        sha256 = "1".repeat(64),
+        sha256 = "1c37549274a2b6cf7f2e3e099d9b8cb641880b8a7dac323a95638a06bb4509a9",
         targetVersions = versions
     )
 
@@ -124,6 +124,24 @@ class VyraCatalogRepositoryTest {
                 execution = "enabled"
             ).canImport
         )
+    }
+
+    @Test
+    fun `catalog cannot replace the pinned official artifact digest`() {
+        val altered = candidate(
+            appStatus = "verified",
+            execution = "enabled"
+        ).copy(sha256 = "2".repeat(64))
+        assertFalse(altered.canImport)
+    }
+
+    @Test
+    fun `catalog cannot select an unreviewed official release`() {
+        val altered = candidate(
+            appStatus = "verified",
+            execution = "enabled"
+        ).copy(releaseVersion = "2.4.0")
+        assertFalse(altered.canImport)
     }
 
     @Test
