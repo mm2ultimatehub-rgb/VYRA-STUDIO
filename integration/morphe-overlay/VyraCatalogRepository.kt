@@ -43,6 +43,8 @@ class VyraCatalogRepository(
                 validationStatus == "passed" &&
                 sourceListedForApp &&
                 sourceId == "morphe-official" &&
+                releaseVersion == TRUSTED_OFFICIAL_RELEASE &&
+                sha256 == TRUSTED_OFFICIAL_SHA256 &&
                 publisher == "MorpheApp" &&
                 repository == "https://github.com/MorpheApp/morphe-patches" &&
                 artifactUrl.startsWith("https://github.com/MorpheApp/morphe-patches/releases/download/") &&
@@ -277,6 +279,8 @@ class VyraCatalogRepository(
         const val MAX_JSON_BYTES = 1_048_576
         const val MAX_BUNDLE_BYTES = 50L * 1024L * 1024L
         const val MAX_REDIRECTS = 5
+        const val TRUSTED_OFFICIAL_RELEASE = "2.3.0"
+        const val TRUSTED_OFFICIAL_SHA256 = "1c37549274a2b6cf7f2e3e099d9b8cb641880b8a7dac323a95638a06bb4509a9"
         val SHA256_PATTERN = Regex("[a-f0-9]{64}")
         val RECORD_PATTERN = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}\\.json")
         val ARTIFACT_HOSTS = setOf(
