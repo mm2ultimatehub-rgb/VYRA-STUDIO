@@ -1,6 +1,6 @@
 /*
  * VYRA Store landing page embedded in the Morphe patching runtime.
- * Catalog labels are discovery hints, not claims of verified patch compatibility.
+ * App entries and status labels are loaded from the validated VYRA catalog.
  */
 package app.morphe.manager.ui.screen.vyra
 
@@ -17,28 +17,34 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
-private data class VyraStoreApp(
-    val name: String,
-    val packageName: String,
-    val status: String,
-    val detail: String
-)
-
-private val storeApps = listOf(
-    VyraStoreApp("YouTube", "com.google.android.youtube", "Candidate", "Patch metadata exists; exact APK and patch compatibility still need validation."),
-    VyraStoreApp("YouTube Music", "com.google.android.apps.youtube.music", "Candidate", "Patch metadata exists; exact APK and patch compatibility still need validation."),
-    VyraStoreApp("Reddit", "com.reddit.frontpage", "Candidate", "Patch metadata exists; exact APK and patch compatibility still need validation."),
-    VyraStoreApp("Instagram", "com.instagram.android", "Experimental", "Coverage is experimental and may not include a compatible patch."),
-    VyraStoreApp("TikTok", "com.zhiliaoapp.musically", "Experimental", "Coverage is experimental and may not include a compatible patch."),
-    VyraStoreApp("Threads", "com.instagram.barcelona", "Experimental", "Coverage is experimental and may not include a compatible patch."),
-    VyraStoreApp("X", "com.twitter.android", "Experimental", "Coverage is experimental and may not include a compatible patch.")
-)
+import app.morphe.manager.domain.repository.VyraCatalogRepository
+import org.koin.compose.koinInject
 
 @Composable
-fun VyraStorePage(bottomBarHeight: androidx.compose.ui.unit.Dp = 0.dp) {
+fun VyraStorePage(
+    bottomBarHeight: androidx.compose.ui.unit.Dp = 0.dp,
+    repository: VyraCatalogRepository = koinInject()
+) {
+    var apps by remember { mutableStateOf<List<VyraCatalogRepository.StoreApp>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(repository) {
+        isLoading = true
+        loadError = null
+        runCatching { repository.listStoreApps() }
+            .onSuccess { apps = it }
+            .onFailure { loadError = it.message ?: "Catalog could not be loaded." }
+        isLoading = false
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = bottomBarHeight + 28.dp),
@@ -48,24 +54,69 @@ fun VyraStorePage(bottomBarHeight: androidx.compose.ui.unit.Dp = 0.dp) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Text("VYRA Store", style = MaterialTheme.typography.headlineMedium)
                 Text(
-                    "Browse app coverage and discover patch sources. A status is not a guarantee that a patch can be applied to every release.",
+                    "Apps and coverage status are loaded from the VYRA catalog. A listed app is not a guarantee that a compatible patch exists for its installed version.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
         }
-        items(storeApps, key = { it.packageName }) { app ->
+        if (isLoading) {
+            item {
+                Text(
+                    "Loading app catalog…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        loadError?.let { error ->
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text(
+                        "Catalog unavailable: $error",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+        items(apps, key = { it.packageName }) { app ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(app.name, style = MaterialTheme.typography.titleMedium)
-                    Text(app.packageName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(app.status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(app.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        app.packageName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        app.status.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Category: ${app.category}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+            }
+        }
+        if (!isLoading && loadError == null && apps.isEmpty()) {
+            item {
+                Text(
+                    "The VYRA catalog currently has no app entries.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         item {
