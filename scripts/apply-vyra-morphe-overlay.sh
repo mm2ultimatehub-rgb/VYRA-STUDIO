@@ -13,6 +13,7 @@ STORE_SOURCE="$ROOT/integration/morphe-overlay/VyraStorePage.kt"
 ICON_COLOR_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_color.xml"
 ICON_WHITE_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_white.xml"
 ICON_BLACK_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_black.xml"
+SPLASH_THEME_SOURCE="$ROOT/integration/morphe-overlay/vyra_splash_theme.xml"
 TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraLocalBundleImporter.kt"
 CATALOG_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/VyraCatalogRepository.kt"
 TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/VyraCatalogRepositoryTest.kt"
@@ -32,7 +33,7 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$ICON_COLOR_SOURCE" || ! -f "$ICON_WHITE_SOURCE" || ! -f "$ICON_BLACK_SOURCE" || ! -f "$MODULE" ]]; then
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$ICON_COLOR_SOURCE" || ! -f "$ICON_WHITE_SOURCE" || ! -f "$ICON_BLACK_SOURCE" || ! -f "$SPLASH_THEME_SOURCE" || ! -f "$MODULE" ]]; then
   echo "ERROR: VYRA overlay source, branding resources, or Morphe DI module is missing." >&2
   exit 1
 fi
@@ -54,6 +55,7 @@ mkdir -p "$MANAGER/app/src/main/res/drawable"
 cp "$ICON_COLOR_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foreground.xml"
 cp "$ICON_WHITE_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foreground_white.xml"
 cp "$ICON_BLACK_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foreground_black.xml"
+cp "$SPLASH_THEME_SOURCE" "$MANAGER/app/src/main/res/values/themes.xml"
 
 python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" <<'PY'
 from pathlib import Path
