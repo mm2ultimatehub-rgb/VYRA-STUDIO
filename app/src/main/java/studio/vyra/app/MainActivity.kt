@@ -289,27 +289,78 @@ private fun OverviewScreen(
 
 @Composable
 private fun StoreScreen(padding: PaddingValues, onSelectApp: (CatalogApp) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val apps = studio.vyra.app.catalog.AppCatalog.apps.filter {
+        it.name.contains(query, ignoreCase = true) || it.packageName.contains(query, ignoreCase = true)
+    }
     PageColumn(padding) {
-        PageHeading("Vyra Store", "Discover apps with known patch-source coverage.")
-        InfoCard(
-            "Catalog preview",
-            "This is the first app catalog, not a claim that every listed app is currently patchable. Exact bundle versions and APK compatibility are checked before a build.",
-        )
-        studio.vyra.app.catalog.AppCatalog.apps.forEach { app ->
-            InfoCard(
-                app.name,
-                "${app.packageName}\n${app.availability.label}\n${app.availability.detail}",
-            )
-            Button(
-                onClick = { onSelectApp(app) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-            ) { Text("Select app") }
+        PageHeading("VYRA Mağazası", "Uygulamanı seç. Destek ve uyumluluk durumunu gör.")
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(22.dp),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("UYGULAMA KATALOĞU", color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium, letterSpacing = 1.5.sp,
+                    fontWeight = FontWeight.Bold)
+                Text("Bir sonraki düzenlemen burada başlıyor.",
+                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Listelenen her uygulama henüz yamalanabilir anlamına gelmez. VYRA, uyumluluğu doğrulanmamış yamaları hazır gibi göstermez.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        InfoCard(
-            "Safety and compatibility",
-            "Community bundles are treated as untrusted until their publisher, release hash, and target app version are verified. Apps without a compatible bundle will be marked unsupported.",
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Uygulama ara") },
+            placeholder = { Text("YouTube, Spotify, Discord…") },
+            singleLine = true,
+            shape = RoundedCornerShape(15.dp),
         )
+        Text("\${apps.size} UYGULAMA", style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary, letterSpacing = 1.3.sp,
+            fontWeight = FontWeight.Bold)
+        apps.forEach { app ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(19.dp),
+            ) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
+                            BoxCenter {
+                                Text(app.name.take(1).uppercase(), color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Column(Modifier.weight(1f).padding(start = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(app.packageName, style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Text(app.availability.label, style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Text(app.availability.detail, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(
+                        onClick = { onSelectApp(app) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(13.dp),
+                    ) { Text("Bu uygulamayı seç") }
+                }
+            }
+        }
+        if (apps.isEmpty()) {
+            InfoCard("Sonuç bulunamadı", "Arama kelimesini değiştirip tekrar dene.")
+        }
     }
 }
 
@@ -394,13 +445,13 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
     }
 
     PageColumn(padding) {
-        PageHeading("APK Patcher", "Inspect an APK before choosing compatible patches.")
+        PageHeading("Yama Merkezi", "APK dosyanı incele ve uyumlu yamaları kontrol et.")
         selectedTarget?.let { target ->
             InfoCard("Selected app: ${target.name}", "${target.packageName}\n${target.availability.label}")
         }
-        InfoCard("1. Choose your APK", selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
+        InfoCard("1. APK dosyan",  selectedApk?.lastPathSegment?.substringAfterLast('/') ?: "Select an APK from your device storage. The file stays on your device.")
         Button(onClick = onChooseApk, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
-            Text(if (selectedApk == null) "Choose APK file" else "Choose another APK")
+            Text(if (selectedApk == null) "APK seç" else "Başka APK seç")
         }
         if (selectedTarget != null) {
             Button(
@@ -428,13 +479,13 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text(if (isCopyingInstalledApk) "Preparing installed app…" else "Use installed app")
+                Text(if (isCopyingInstalledApk) "Hazırlanıyor…" else "Telefondaki uygulamayı kullan")
             }
-            installedApkStatus?.let { InfoCard("Installed app", it) }
+            installedApkStatus?.let { InfoCard("Kurulu uygulama", it) }
         }
         when {
-            isInspecting -> InfoCard("Inspecting APK", "Reading package metadata and calculating SHA-256 fingerprints…")
-            inspectionError != null -> InfoCard("Inspection failed", inspectionError ?: "Unknown inspection error.")
+            isInspecting -> InfoCard("APK inceleniyor", "Paket bilgileri okunuyor ve SHA-256 özeti hesaplanıyor…")
+            inspectionError != null -> InfoCard("İnceleme başarısız", inspectionError ?: "Bilinmeyen hata.")
             inspection != null -> {
                 ApkDetailsCard(inspection!!)
                 if (selectedTarget != null && inspection!!.packageName != selectedTarget.packageName) {
@@ -443,7 +494,7 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
             }
         }
         when {
-            isCheckingPatches -> InfoCard("Checking compatibility", "Comparing this APK with saved repository indexes…")
+            isCheckingPatches -> InfoCard("Uyumluluk kontrol ediliyor", "APK, kayıtlı yama kaynaklarıyla karşılaştırılıyor…")
             patchLookupMessage != null -> InfoCard("Compatibility", patchLookupMessage!!)
         }
         patchMatches.forEach { (repositoryName, patch) ->
@@ -480,8 +531,8 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, selectedTar
             }
             artifactStatuses[patch.id]?.let { InfoCard("Patch package status", it) }
         }
-        InfoCard("2. Compatibility", "Only package and version-range matches are listed. Review the patch source and requirements before proceeding.")
-        InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
+        InfoCard("2. Yama uyumluluğu", "Yalnızca paket ve sürüm koşulları eşleşen yamalar listelenir.")
+        InfoCard("3. Oluştur ve dışa aktar", "Yama motorunun bu ekrandaki işlem akışına bağlantısı henüz tamamlanmadı. Bu sürüm APK değiştirmez veya üretmez.")
     }
 }
 
@@ -505,10 +556,10 @@ private fun ApkDetailsCard(info: ApkInspection) {
 @Composable
 private fun CreatorScreen(padding: PaddingValues) {
     PageColumn(padding) {
-        PageHeading("Patch Creator", "Design and validate your own patch collection.")
-        InfoCard("Manifest workspace", "Create a collection name, version, description, target apps, and compatibility rules.")
-        InfoCard("Validation", "Manifest checks and patch packaging will be added before the creator can export a release.")
-        InfoCard("No code execution yet", "This screen is a product shell. It does not compile or execute patch code.")
+        PageHeading("Yama Atölyesi", "Kendi yama koleksiyonunu tasarla ve doğrula.")
+        InfoCard("Koleksiyon çalışma alanı", "Koleksiyon adı, sürüm, açıklama, hedef uygulama ve uyumluluk kuralları.")
+        InfoCard("Doğrulama", "Dışa aktarma açılmadan önce manifest kontrolleri ve paketleme tamamlanacak.")
+        InfoCard("Henüz kod çalıştırmaz", "Bu ekran şimdilik çalışma alanı taslağıdır; yama kodu derlemez veya çalıştırmaz.")
     }
 }
 
