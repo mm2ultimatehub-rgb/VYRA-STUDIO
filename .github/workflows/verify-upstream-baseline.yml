@@ -9,6 +9,7 @@ on:
     paths:
       - ".gitmodules"
       - "upstream/**"
+      - "app/**"
       - "scripts/verify-upstream-baseline.sh"
       - ".github/workflows/verify-upstream-baseline.yml"
 
