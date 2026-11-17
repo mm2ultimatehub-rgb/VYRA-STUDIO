@@ -127,6 +127,7 @@ private fun VyraApp() {
                         )
                     }
                 },
+                actions = { studio.vyra.app.update.UpdateCheckAction() },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
