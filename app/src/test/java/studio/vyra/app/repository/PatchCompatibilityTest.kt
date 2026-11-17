@@ -36,10 +36,21 @@ class PatchCompatibilityTest {
         assertFalse(PatchCompatibility.matches(patch(max = 149), apk))
     }
 
+    @Test
+    fun matchesExactCatalogVersion() {
+        assertTrue(PatchCompatibility.matches(patch(targetVersions = setOf("2.0", "2.1")), apk))
+    }
+
+    @Test
+    fun rejectsDifferentExactCatalogVersion() {
+        assertFalse(PatchCompatibility.matches(patch(targetVersions = setOf("2.1")), apk))
+    }
+
     private fun patch(
         packageName: String = "org.example.app",
         min: Long? = null,
         max: Long? = null,
+        targetVersions: Set<String> = emptySet(),
     ) = PatchEntry(
         id = "sample-patch",
         name = "Sample",
@@ -50,5 +61,6 @@ class PatchCompatibilityTest {
         artifactUrl = "https://example.org/sample.mpp",
         artifactSha256 = "b".repeat(64),
         format = "mpp",
+        targetVersions = targetVersions,
     )
 }
