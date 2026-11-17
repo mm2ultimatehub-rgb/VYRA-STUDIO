@@ -127,6 +127,17 @@ class VyraCatalogRepositoryTest {
     }
 
     @Test
+    fun `artifact must match the exact pinned release asset URL`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                artifactUrl = "https://github.com/MorpheApp/morphe-patches/releases/download/v2.3.0/other.mpp",
+                execution = "enabled"
+            ).canImport
+        )
+    }
+
+    @Test
     fun `catalog cannot replace the pinned official artifact digest`() {
         val altered = candidate(
             appStatus = "verified",
