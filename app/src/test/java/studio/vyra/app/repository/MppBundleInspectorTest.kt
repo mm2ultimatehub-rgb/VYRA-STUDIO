@@ -27,6 +27,33 @@ class MppBundleInspectorTest {
     }
 
     @Test
+    fun acceptsExpectedBundleVersionWithOptionalVPrefix() {
+        val file = createBundle(includeDex = true)
+        try {
+            val metadata = inspector.inspect(file, "v1.2.3")
+            assertEquals("1.2.3", metadata.version)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun rejectsBundleVersionThatDoesNotMatchCatalogRelease() {
+        val file = createBundle(includeDex = true)
+        try {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                inspector.inspect(file, "2.3.0")
+            }
+            assertEquals(
+                "Patch bundle version mismatch: expected 2.3.0 but found 1.2.3.",
+                error.message,
+            )
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
     fun rejectsBundleWithoutManifest() {
         val file = createBundle(includeDex = true, includeManifest = false)
         try {

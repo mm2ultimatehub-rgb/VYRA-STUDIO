@@ -31,6 +31,21 @@ class PatchCompatibilityTest {
     }
 
     @Test
+    fun matchesExactVersionNameAllowlist() {
+        val allowed = patch().copy(targetVersions = setOf("2.0", "2.1"))
+        val rejected = patch().copy(targetVersions = setOf("2.1", "2.2"))
+        assertTrue(PatchCompatibility.matches(allowed, apk))
+        assertFalse(PatchCompatibility.matches(rejected, apk))
+    }
+
+    @Test
+    fun rejectsMissingVersionNameWhenAllowlistExists() {
+        val withoutVersion = apk.copy(versionName = null)
+        val restricted = patch().copy(targetVersions = setOf("2.0"))
+        assertFalse(PatchCompatibility.matches(restricted, withoutVersion))
+    }
+
+    @Test
     fun rejectsVersionOutsideRange() {
         assertFalse(PatchCompatibility.matches(patch(min = 151), apk))
         assertFalse(PatchCompatibility.matches(patch(max = 149), apk))

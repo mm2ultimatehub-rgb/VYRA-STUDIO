@@ -63,6 +63,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
+import studio.vyra.app.catalog.RemoteVyraCatalog
+import studio.vyra.app.catalog.VyraRepositoryCatalogClient
 import studio.vyra.app.apk.ApkInspector
 import studio.vyra.app.repository.PatchArtifactDownloader
 import studio.vyra.app.repository.PatchCompatibility
@@ -221,25 +223,90 @@ private fun OverviewScreen(
 
 @Composable
 private fun StoreScreen(padding: PaddingValues) {
+    val client = remember { VyraRepositoryCatalogClient() }
+    val scope = rememberCoroutineScope()
+    var catalog by remember { mutableStateOf<RemoteVyraCatalog?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    fun refreshCatalog() {
+        scope.launch {
+            isLoading = true
+            error = null
+            try {
+                catalog = withContext(Dispatchers.IO) { client.fetch() }
+            } catch (failure: Exception) {
+                error = failure.message ?: "Could not load the VYRA catalog."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) { refreshCatalog() }
+
     PageColumn(padding) {
-        PageHeading("Vyra Store", "Discover apps with known patch-source coverage.")
-        InfoCard(
-            "Catalog preview",
-            "This is the first app catalog, not a claim that every listed app is currently patchable. Exact bundle versions and APK compatibility are checked before a build.",
-        )
-        studio.vyra.app.catalog.AppCatalog.apps.forEach { app ->
+        PageHeading("Vyra Store", "Live app and patch-source catalog from VYRA Repository.")
+        Button(
+            onClick = { refreshCatalog() },
+            enabled = !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) { Text(if (isLoading) "Refreshing catalog…" else "Refresh catalog") }
+
+        if (isLoading && catalog == null) {
+            InfoCard("Connecting to VYRA Repository", "Loading the app list, source records, and version compatibility data.")
+        }
+        error?.let { InfoCard("Catalog unavailable", "$it\nThe last successfully loaded catalog remains visible, if available.") }
+        val loaded = catalog
+        if (loaded == null && !isLoading && error == null) {
+            InfoCard("Catalog not loaded", "VYRA will retry when you refresh this screen.")
+        }
+        loaded?.let { remote ->
             InfoCard(
-                app.name,
-                "${app.packageName}\n${app.availability.label}\n${app.availability.detail}",
+                "Repository connected",
+                "Loaded ${remote.apps.size} apps and ${remote.sources.size} patch sources.\nCatalog timestamp: ${remote.generatedAt.ifBlank { "Not provided" }}",
+            )
+            remote.apps.forEach { app ->
+                val statusLabel = when (app.status) {
+                    "verified" -> "Verified"
+                    "candidate" -> "Candidate — not tested end to end"
+                    "experimental" -> "Experimental — community source"
+                    "unsupported" -> "Unsupported"
+                    else -> app.status
+                }
+                val sourceDetails = app.patchSourceIds.joinToString("\n") { sourceId ->
+                    val source = remote.sources.firstOrNull { it.id == sourceId }
+                    if (source == null) sourceId else {
+                        val version = source.releaseVersion?.let { " • bundle $it" }.orEmpty()
+                        "${source.publisher} ($sourceId)$version"
+                    }
+                }
+                val versionDetails = app.targetVersions.entries.joinToString("\n") { (sourceId, versions) ->
+                    "$sourceId versions: ${versions.joinToString(", ").ifBlank { "Not listed" }}"
+                }
+                InfoCard(
+                    app.name,
+                    buildString {
+                        appendLine(app.packageName)
+                        appendLine("Status: $statusLabel")
+                        appendLine("Category: ${app.category}")
+                        appendLine("Patch sources: ${app.patchSourceIds.size}")
+                        if (sourceDetails.isNotBlank()) appendLine(sourceDetails)
+                        if (versionDetails.isNotBlank()) {
+                            appendLine()
+                            append(versionDetails)
+                        }
+                    },
+                )
+            }
+            InfoCard(
+                "Safe patch handling",
+                "This screen reads catalog metadata only. It does not download or execute patch bundles, fetch APKs, or build modified APKs. Experimental sources remain untrusted and require review.",
             )
         }
-        InfoCard(
-            "Safety and compatibility",
-            "Community bundles are treated as untrusted until their publisher, release hash, and target app version are verified. Apps without a compatible bundle will be marked unsupported.",
-        )
     }
 }
-
 @Composable
 private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk: () -> Unit) {
     val context = LocalContext.current
@@ -249,6 +316,11 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
     var patchMatches by remember(selectedApk) { mutableStateOf<List<Pair<String, PatchEntry>>>(emptyList()) }
     var isCheckingPatches by remember(selectedApk) { mutableStateOf(false) }
     var patchLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var catalogPatchMatches by remember(selectedApk) { mutableStateOf<List<Triple<String, String, PatchEntry>>>(emptyList()) }
+    var catalogLookupMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var downloadingPatchId by remember(selectedApk) { mutableStateOf<String?>(null) }
+    var bundleInspectionMessage by remember(selectedApk) { mutableStateOf<String?>(null) }
+    val patcherScope = rememberCoroutineScope()
 
     LaunchedEffect(selectedApk) {
         val uri = selectedApk ?: return@LaunchedEffect
@@ -288,8 +360,71 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
             } else {
                 "${matches.size} compatible patch(es) found."
             }
+
+            try {
+                val remoteCatalog = withContext(Dispatchers.IO) { VyraRepositoryCatalogClient().fetch() }
+                val remoteMatches = buildList {
+                    remoteCatalog.apps.filter { it.packageName == apk.packageName }.forEach { app ->
+                        app.patchSourceIds.forEach sourceLoop@{ sourceId ->
+                            val patch = remoteCatalog.patchFor(app.id, sourceId) ?: return@sourceLoop
+                            if (PatchCompatibility.matches(patch, apk)) {
+                                val source = remoteCatalog.sources.firstOrNull { it.id == sourceId }
+                                if (source != null) {
+                                    val trustLabel = if (source.trust == "official-publisher") "Official publisher" else "Unverified community source"
+                                    add(Triple(source.publisher, "${app.status} • $trustLabel • execution ${source.execution}", patch))
+                                }
+                            }
+                        }
+                    }
+                }
+                catalogPatchMatches = remoteMatches
+                catalogLookupMessage = if (remoteMatches.isEmpty()) {
+                    "No exact-version match in the VYRA catalog for this APK."
+                } else {
+                    "${remoteMatches.size} VYRA catalog match(es) found. These are compatibility candidates, not applied patches."
+                }
+            } catch (catalogError: Exception) {
+                catalogPatchMatches = emptyList()
+                catalogLookupMessage = "VYRA catalog could not be checked: ${catalogError.message ?: "unknown error"}"
+            }
         } finally {
             isCheckingPatches = false
+        }
+    }
+
+    // Prepare official, hash-pinned bundles automatically after an exact APK/version match.
+    // Community bundles remain manual; no downloaded patch code is executed here.
+    LaunchedEffect(catalogPatchMatches) {
+        val officialCandidates = catalogPatchMatches.filter { (_, status, _) ->
+            status.contains("Official publisher") &&
+                status.contains("execution disabled-until-reviewed")
+        }
+        for ((publisher, _, patch) in officialCandidates) {
+            downloadingPatchId = patch.id
+            bundleInspectionMessage = "Automatically preparing the official patch bundle from $publisher…"
+            try {
+                val inspected = withContext(Dispatchers.IO) {
+                    val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                    val metadata = MppBundleInspector().inspect(file, patch.expectedArtifactVersion)
+                    file to metadata
+                }
+                val metadata = inspected.second
+                bundleInspectionMessage = buildString {
+                    appendLine("Automatic preparation complete: ${inspected.first.name}")
+                    appendLine("Publisher: $publisher")
+                    appendLine("SHA-256: ${patch.artifactSha256} (verified)")
+                    appendLine("MPP name: ${metadata.name ?: "Not declared"}")
+                    appendLine("MPP version: ${metadata.version ?: "Not declared"}")
+                    appendLine("Author: ${metadata.author ?: "Not declared"}")
+                    appendLine("License: ${metadata.license ?: "Not declared"}")
+                    appendLine("DEX entries: ${metadata.dexEntryCount}")
+                    append("Inspection only — patch execution and APK rebuilding are not enabled yet.")
+                }
+            } catch (failure: Exception) {
+                bundleInspectionMessage = "Automatic bundle preparation failed: ${failure.message ?: "unknown error"}"
+            } finally {
+                downloadingPatchId = null
+            }
         }
     }
 
@@ -314,7 +449,50 @@ private fun PatcherScreen(padding: PaddingValues, selectedApk: Uri?, onChooseApk
                 body = "Source: ${repositoryName}\nTarget: ${patch.targetPackage}\nFormat: ${patch.format.uppercase()}\nArtifact SHA-256: ${patch.artifactSha256}",
             )
         }
-        InfoCard("2. Compatibility", "Only package and version-range matches are listed. Review the patch source and requirements before proceeding.")
+        catalogLookupMessage?.let { InfoCard("VYRA Repository compatibility", it) }
+        catalogPatchMatches.forEach { (publisher, sourceStatus, patch) ->
+            InfoCard(
+                title = patch.name,
+                body = "Publisher: $publisher\nTarget: ${patch.targetPackage}\nExact app versions: ${patch.targetVersions.sorted().joinToString(", ")}\nSource status: $sourceStatus\nSHA-256: ${patch.artifactSha256}\nThe bundle can be downloaded for inspection only; patch execution is disabled.",
+            )
+            Button(
+                onClick = {
+                    patcherScope.launch {
+                        downloadingPatchId = patch.id
+                        bundleInspectionMessage = null
+                        try {
+                            val inspected = withContext(Dispatchers.IO) {
+                                val file = PatchArtifactDownloader().downloadAndVerify(patch, context.cacheDir)
+                                val metadata = MppBundleInspector().inspect(file, patch.expectedArtifactVersion)
+                                file to metadata
+                            }
+                            val metadata = inspected.second
+                            bundleInspectionMessage = buildString {
+                                appendLine("Verified download: ${inspected.first.name}")
+                                appendLine("SHA-256: ${patch.artifactSha256}")
+                                appendLine("MPP name: ${metadata.name ?: "Not declared"}")
+                                appendLine("MPP version: ${metadata.version ?: "Not declared"}")
+                                appendLine("Author: ${metadata.author ?: "Not declared"}")
+                                appendLine("License: ${metadata.license ?: "Not declared"}")
+                                appendLine("DEX entries: ${metadata.dexEntryCount}")
+                                append("Inspection only — no patch code was executed.")
+                            }
+                        } catch (failure: Exception) {
+                            bundleInspectionMessage = "Download or inspection failed: ${failure.message ?: "unknown error"}"
+                        } finally {
+                            downloadingPatchId = null
+                        }
+                    }
+                },
+                enabled = downloadingPatchId == null,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Text(if (downloadingPatchId == patch.id) "Downloading and checking…" else "Download and inspect MPP")
+            }
+        }
+        bundleInspectionMessage?.let { InfoCard("MPP bundle inspection", it) }
+        InfoCard("2. Compatibility", "VYRA checks the package name and exact version name against the central catalog and saved sources. A match only confirms listed compatibility; it does not mean the patch was applied or tested on a device.")
         InfoCard("3. Build and export", "The patch engine is not connected yet. This version does not modify or generate APK files.")
     }
 }
