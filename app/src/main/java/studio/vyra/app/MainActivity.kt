@@ -319,7 +319,7 @@ private fun StoreScreen(padding: PaddingValues, onSelectApp: (CatalogApp) -> Uni
             singleLine = true,
             shape = RoundedCornerShape(15.dp),
         )
-        Text("\${apps.size} UYGULAMA", style = MaterialTheme.typography.labelMedium,
+        Text("${apps.size} UYGULAMA", style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary, letterSpacing = 1.3.sp,
             fontWeight = FontWeight.Bold)
         apps.forEach { app ->
