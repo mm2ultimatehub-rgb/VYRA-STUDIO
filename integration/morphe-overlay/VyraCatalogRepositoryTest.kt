@@ -7,6 +7,12 @@ import kotlin.test.assertTrue
 class VyraCatalogRepositoryTest {
     private fun candidate(
         appStatus: String = "candidate",
+        validationStatus: String = "passed",
+        sourceListedForApp: Boolean = true,
+        sourceId: String = "morphe-official",
+        publisher: String = "MorpheApp",
+        repository: String = "https://github.com/MorpheApp/morphe-patches",
+        artifactUrl: String = "https://github.com/MorpheApp/morphe-patches/releases/download/v2.3.0/patches-2.3.0.mpp",
         trust: String = "official-publisher",
         execution: String = "disabled-until-reviewed",
         versions: Set<String> = setOf("21.30.216")
@@ -15,12 +21,15 @@ class VyraCatalogRepositoryTest {
         appName = "YouTube",
         packageName = "com.google.android.youtube",
         appStatus = appStatus,
-        sourceId = "morphe-official",
-        publisher = "MorpheApp",
+        validationStatus = validationStatus,
+        sourceListedForApp = sourceListedForApp,
+        sourceId = sourceId,
+        publisher = publisher,
+        repository = repository,
         trust = trust,
         execution = execution,
         releaseVersion = "2.3.0",
-        artifactUrl = "https://github.com/MorpheApp/morphe-patches/releases/download/v2.3.0/patches-2.3.0.mpp",
+        artifactUrl = artifactUrl,
         sha256 = "1".repeat(64),
         targetVersions = versions
     )
@@ -47,6 +56,58 @@ class VyraCatalogRepositoryTest {
             candidate(
                 appStatus = "verified",
                 trust = "official-publisher",
+                execution = "enabled"
+            ).canImport
+        )
+    }
+
+
+    @Test
+    fun `catalog validation must pass before import`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                validationStatus = "not-tested",
+                execution = "enabled"
+            ).canImport
+        )
+    }
+
+    @Test
+    fun `source must be declared by the app record`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                sourceListedForApp = false,
+                execution = "enabled"
+            ).canImport
+        )
+    }
+
+    @Test
+    fun `only the pinned official Morphe repository is eligible`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                repository = "https://github.com/attacker/morphe-patches",
+                execution = "enabled"
+            ).canImport
+        )
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                sourceId = "community",
+                execution = "enabled"
+            ).canImport
+        )
+    }
+
+    @Test
+    fun `artifact must come from the official release path`() {
+        assertFalse(
+            candidate(
+                appStatus = "verified",
+                artifactUrl = "https://github.com/attacker/release/download/file.mpp",
                 execution = "enabled"
             ).canImport
         )
