@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - integration/morphe-baseline
+      - integration/vyra-engine-foundation
     paths:
       - ".gitmodules"
       - "upstream/**"
