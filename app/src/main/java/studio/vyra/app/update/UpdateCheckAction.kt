@@ -2,7 +2,6 @@ package studio.vyra.app.update
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
@@ -37,12 +36,6 @@ fun UpdateCheckAction() {
                 checking = true
                 result = null
                 scope.launch {
-                    val version = if (Build.VERSION.SDK_INT >= 28) {
-                        context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
-                    } else {
-                        @Suppress("DEPRECATION")
-                        context.packageManager.getPackageInfo(context.packageName, 0).versionCode.toLong()
-                    }
                     val currentName = context.packageManager.getPackageInfo(
                         context.packageName, 0
                     ).versionName ?: "0.0.0"
@@ -93,8 +86,7 @@ fun UpdateCheckAction() {
                             )
                             result = null
                         },
-                        enabled = state.update.sha256 != null,
-                    ) { Text("Open verified release") }
+                    ) { Text("Open release details") }
                 },
                 dismissButton = {
                     TextButton(onClick = { result = null }) { Text("Close") }
