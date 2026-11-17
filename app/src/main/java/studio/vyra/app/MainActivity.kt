@@ -221,10 +221,21 @@ private fun OverviewScreen(
 @Composable
 private fun StoreScreen(padding: PaddingValues) {
     PageColumn(padding) {
-        PageHeading("Vyra Store", "A home for community patch collections.")
-        InfoCard("Patch catalog", "Patch collections will appear here with supported apps, versions, changelogs, and requirements.")
-        InfoCard("Compatibility first", "Each patch will show its target app and supported versions before you start a build.")
-        InfoCard("Sources you control", "Only add repositories you trust. External sources will always require your confirmation.")
+        PageHeading("Vyra Store", "Discover apps with known patch-source coverage.")
+        InfoCard(
+            "Catalog preview",
+            "This is the first app catalog, not a claim that every listed app is currently patchable. Exact bundle versions and APK compatibility are checked before a build.",
+        )
+        studio.vyra.app.catalog.AppCatalog.apps.forEach { app ->
+            InfoCard(
+                app.name,
+                "${app.packageName}\n${app.availability.label}\n${app.availability.detail}",
+            )
+        }
+        InfoCard(
+            "Safety and compatibility",
+            "Community bundles are treated as untrusted until their publisher, release hash, and target app version are verified. Apps without a compatible bundle will be marked unsupported.",
+        )
     }
 }
 
