@@ -34,11 +34,12 @@ cp "$CATALOG_SOURCE" "$CATALOG_TARGET"
 mkdir -p "$(dirname "$TEST_TARGET")"
 cp "$TEST_SOURCE" "$TEST_TARGET"
 
-python3 - "$MODULE" <<'PY'
+python3 - "$MODULE" "$ROOT" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
+root = Path(sys.argv[2])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
@@ -66,8 +67,8 @@ path.write_text(text, encoding="utf-8")
 # Connect catalog discovery to the actual patch flow. Import is attempted only
 # when Morphe has no source for this exact app version, and the repository's
 # execution gate must approve the catalog entry before any MPP is imported.
-patch_flow = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/PatchFlow.kt"
-home_vm = path.parent.parent / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
+patch_flow = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/PatchFlow.kt"
+home_vm = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
 
 flow_text = patch_flow.read_text(encoding="utf-8")
 flow_dependency = "    private val vyraCatalogRepository: VyraCatalogRepository,\n"
