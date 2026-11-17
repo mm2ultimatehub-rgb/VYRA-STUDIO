@@ -50,7 +50,7 @@ if items.get("windowSplashScreenBackground", "").upper() != "#080B1C":
 
 for name in ("vyra_launcher_color.xml", "vyra_launcher_white.xml", "vyra_launcher_black.xml"):
     vector = ET.parse(overlay / name).getroot()
-    if vector.tag != "{http://schemas.android.com/apk/res/android}vector":
+    if vector.tag != "vector":
         raise SystemExit(f"ERROR: {name} is not an Android vector drawable.")
     if vector.attrib.get("{http://schemas.android.com/apk/res/android}width") != "108dp":
         raise SystemExit(f"ERROR: {name} has an unexpected drawable width.")
