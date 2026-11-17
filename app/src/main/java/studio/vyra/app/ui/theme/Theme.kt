@@ -6,15 +6,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val VyraColors = darkColorScheme(
-    primary = Color(0xFFB6A0FF),
-    onPrimary = Color(0xFF24104F),
-    secondary = Color(0xFF8CD8D0),
-    background = Color(0xFF0B0B10),
-    surface = Color(0xFF15151D),
-    surfaceVariant = Color(0xFF242431),
-    onBackground = Color(0xFFF4F1FA),
-    onSurface = Color(0xFFF4F1FA),
-    onSurfaceVariant = Color(0xFFB4B0C2),
+    primary = Color(0xFFB9A2FF),
+    onPrimary = Color(0xFF17102E),
+    primaryContainer = Color(0xFF302252),
+    onPrimaryContainer = Color(0xFFE9DFFF),
+    secondary = Color(0xFF8ED8E8),
+    onSecondary = Color(0xFF08232B),
+    background = Color(0xFF080B18),
+    surface = Color(0xFF111629),
+    surfaceVariant = Color(0xFF1B2340),
+    onBackground = Color(0xFFF4F2FF),
+    onSurface = Color(0xFFF4F2FF),
+    onSurfaceVariant = Color(0xFFAAB3CC),
+    outline = Color(0xFF3A4564),
 )
 
 @Composable
