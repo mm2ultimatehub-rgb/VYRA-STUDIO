@@ -20,8 +20,9 @@ This keeps the integration tied to the source revision that was inspected.
 1. The caller supplies a downloaded MPP file and the expected catalog SHA-256.
 2. The bridge checks the digest format, file existence, and 50 MB compressed-size limit.
 3. It opens the MPP as a JAR and checks for a manifest and at least one DEX payload.
-4. It rejects archives with more than 50,000 entries, unsafe absolute/traversal paths,
-   or a declared expanded size above 250 MB.
+4. It rejects archives with more than 50,000 entries, duplicate or unsafe paths,
+   Windows-style traversal, and actual decompressed content above 250 MB. The validator
+   streams every entry instead of trusting ZIP size metadata.
 5. It computes SHA-256 from the file bytes and compares it with the expected digest.
 6. Only after all checks pass, it calls Morphe's `PatchBundleRepository.createLocal()`.
 7. Morphe owns the resulting local source and its normal patch metadata loading.
@@ -33,9 +34,11 @@ This keeps the integration tied to the source revision that was inspected.
 - It does not make an unsupported app compatible.
 - It does not prove a publisher is trustworthy merely because a digest matches.
 - It does not replace the need for a trusted-source policy and user-visible consent.
-- It does not yet connect the VYRA catalog screen to the Morphe patch-selection flow.
+- It does not yet combine the standalone VYRA shell/catalog UI and Morphe Manager UI into one distributable app.
 
-A successful import means Morphe accepted the local MPP as a source. It is not
+The catalog currently labels its entries candidate/experimental and its execution
+policy disabled, so automatic import remains blocked. A successful import in a future
+approved configuration will mean Morphe accepted the local MPP as a source; it is not
 proof that a particular APK was patched successfully.
 
 ## Overlay application
