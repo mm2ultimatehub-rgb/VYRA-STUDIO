@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">VYRA Studio symbol</title>
+  <defs>
+    <linearGradient id="vyra" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e43cff"/>
+      <stop offset="0.48" stop-color="#743dff"/>
+      <stop offset="1" stop-color="#31d9ff"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#vyra)" d="M42 94 L146 94 L255 296 L366 94 L472 94 L293 420 Q256 486 219 420 Z"/>
+  <path fill="#080b1c" d="M126 157 L171 157 L256 313 L342 157 L387 157 L278 357 Q256 397 234 357 Z"/>
+  <path fill="url(#vyra)" d="M174 190 L211 190 L256 273 L301 190 L338 190 L256 340 Z"/>
+</svg>
