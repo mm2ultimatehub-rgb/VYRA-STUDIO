@@ -83,9 +83,10 @@ flow_hook = """        // VYRA may supply a compatible source when Morphe has no
         val existingForVersion = patchBundleRepository
             .scopedBundleInfoFlow(selectedApp.packageName, selectedApp.version, selectedApp.versionCode)
             .first()
-        if (existingForVersion.isEmpty() && selectedApp.version.isNotBlank()) {
+        val selectedVersion = selectedApp.version
+        if (existingForVersion.isEmpty() && !selectedVersion.isNullOrBlank()) {
             runCatching {
-                vyraCatalogRepository.findCompatible(selectedApp.packageName, selectedApp.version)
+                vyraCatalogRepository.findCompatible(selectedApp.packageName, selectedVersion)
                     .filter { it.canImport }
                     .forEach { candidate ->
                         vyraCatalogRepository.downloadAndImport(candidate, app.cacheDir)
