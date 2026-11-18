@@ -60,7 +60,7 @@ cp "$ICON_WHITE_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foregrou
 cp "$ICON_BLACK_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foreground_black.xml"
 cp "$SPLASH_THEME_SOURCE" "$MANAGER/app/src/main/res/values/themes.xml"
 
-python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" <<'PY'
+python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" <<'PY'
 from pathlib import Path
 import sys
 
