@@ -245,6 +245,18 @@ old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
 new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
 store_string = '<string name="vyra_store">VYRA Store</string>'
 home_string = '<string name="vyra_home">VYRA</string>'
+# Keep the native engine navigation, but present its remaining tabs in VYRA's Turkish UI.
+localized_strings = {
+    '<string name="sources">Sources</string>': '<string name="sources">Kaynaklar</string>',
+    '<string name="settings">Settings</string>': '<string name="settings">Ayarlar</string>',
+    '<string name="apps">Apps</string>': '<string name="apps">VYRA</string>',
+}
+for old_value, new_value in localized_strings.items():
+    if new_value not in strings_text:
+        if strings_text.count(old_value) != 1:
+            raise SystemExit(f"ERROR: expected one resource {old_value}; refusing unsafe navigation localization.")
+        strings_text = strings_text.replace(old_value, new_value, 1)
+
 if home_string not in strings_text:
     closing = "</resources>"
     if strings_text.count(closing) != 1:
