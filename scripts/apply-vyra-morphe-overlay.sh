@@ -241,6 +241,10 @@ if gradle_text.count(expected_application_id) != 1:
     raise SystemExit("ERROR: unexpected Morphe applicationId declaration; refusing unsafe build identity edit.")
 
 strings_text = strings_xml.read_text(encoding="utf-8-sig")
+# Remove upstream product branding from user-facing Android string resources.
+# Internal package names, source repositories, license notices and code identifiers stay untouched.
+strings_text = strings_text.replace("Morphe", "VYRA")
+
 old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
 new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
 store_string = '<string name="vyra_store">VYRA Store</string>'
