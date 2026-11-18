@@ -17,6 +17,10 @@ sealed interface InstalledApkResult {
  * Split installs are rejected rather than silently exporting an incomplete APK.
  */
 class InstalledAppApkProvider(private val context: Context) {
+    private companion object {
+        const val MAX_APK_BYTES = 500L * 1024L * 1024L
+    }
+
     fun copyBaseApk(packageName: String): InstalledApkResult {
         val appInfo = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -50,11 +54,33 @@ class InstalledAppApkProvider(private val context: Context) {
             }
             val safeName = packageName.replace(Regex("[^A-Za-z0-9._-]"), "_")
             val destination = File(directory, "$safeName-installed.apk")
-            source.inputStream().use { input ->
-                FileOutputStream(destination).use { output ->
-                    input.copyTo(output)
-                    output.fd.sync()
+            val temporary = File.createTempFile("$safeName-", ".part", directory)
+            try {
+                var totalBytes = 0L
+                source.inputStream().use { input ->
+                    FileOutputStream(temporary).use { output ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            totalBytes += count
+                            require(totalBytes <= MAX_APK_BYTES) {
+                                "Installed APK exceeds VYRA's 500 MB copy limit."
+                            }
+                            output.write(buffer, 0, count)
+                        }
+                        require(totalBytes > 0L) { "Installed APK is empty." }
+                        output.fd.sync()
+                    }
                 }
+                if (destination.exists() && !destination.delete()) {
+                    throw IllegalStateException("Could not replace the previous cached APK.")
+                }
+                require(temporary.renameTo(destination)) {
+                    "Could not finalize the copied APK."
+                }
+            } finally {
+                temporary.delete()
             }
             val label = context.packageManager.getApplicationLabel(appInfo).toString()
             InstalledApkResult.Available(Uri.fromFile(destination), label, packageName)
