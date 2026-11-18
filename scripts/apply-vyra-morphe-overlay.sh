@@ -10,6 +10,7 @@ TEST_SOURCE="$ROOT/integration/morphe-overlay/VyraCatalogRepositoryTest.kt"
 VALIDATOR_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidator.kt"
 VALIDATOR_TEST_SOURCE="$ROOT/integration/morphe-overlay/MppArchiveValidatorTest.kt"
 STORE_SOURCE="$ROOT/integration/morphe-overlay/VyraStorePage.kt"
+HOME_SOURCE="$ROOT/integration/morphe-overlay/VyraHomePage.kt"
 ICON_COLOR_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_color.xml"
 ICON_WHITE_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_white.xml"
 ICON_BLACK_SOURCE="$ROOT/integration/morphe-overlay/vyra_launcher_black.xml"
@@ -20,6 +21,7 @@ TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/Vyr
 VALIDATOR_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/domain/repository/MppArchiveValidator.kt"
 VALIDATOR_TEST_TARGET="$MANAGER/app/src/test/java/app/morphe/manager/domain/repository/MppArchiveValidatorTest.kt"
 STORE_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/vyra/VyraStorePage.kt"
+HOME_TARGET="$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/vyra/VyraHomePage.kt"
 MODULE="$MANAGER/app/src/main/java/app/morphe/manager/di/RepositoryModule.kt"
 
 if ! git -C "$MANAGER" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -33,7 +35,7 @@ if [[ "$actual" != "$EXPECTED_MANAGER_SHA" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$ICON_COLOR_SOURCE" || ! -f "$ICON_WHITE_SOURCE" || ! -f "$ICON_BLACK_SOURCE" || ! -f "$SPLASH_THEME_SOURCE" || ! -f "$MODULE" ]]; then
+if [[ ! -f "$SOURCE" || ! -f "$CATALOG_SOURCE" || ! -f "$TEST_SOURCE" || ! -f "$VALIDATOR_SOURCE" || ! -f "$VALIDATOR_TEST_SOURCE" || ! -f "$STORE_SOURCE" || ! -f "$HOME_SOURCE" || ! -f "$ICON_COLOR_SOURCE" || ! -f "$ICON_WHITE_SOURCE" || ! -f "$ICON_BLACK_SOURCE" || ! -f "$SPLASH_THEME_SOURCE" || ! -f "$MODULE" ]]; then
   echo "ERROR: VYRA overlay source, branding resources, or Morphe DI module is missing." >&2
   exit 1
 fi
@@ -47,6 +49,7 @@ cp "$TEST_SOURCE" "$TEST_TARGET"
 cp "$VALIDATOR_TEST_SOURCE" "$VALIDATOR_TEST_TARGET"
 mkdir -p "$(dirname "$STORE_TARGET")"
 cp "$STORE_SOURCE" "$STORE_TARGET"
+cp "$HOME_SOURCE" "$HOME_TARGET"
 
 # Install the VYRA adaptive launcher icon into the temporary pinned engine tree.
 mkdir -p "$MANAGER/app/src/main/res/drawable"
@@ -57,7 +60,7 @@ cp "$ICON_WHITE_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foregrou
 cp "$ICON_BLACK_SOURCE" "$MANAGER/app/src/main/res/drawable/ic_launcher_foreground_black.xml"
 cp "$SPLASH_THEME_SOURCE" "$MANAGER/app/src/main/res/values/themes.xml"
 
-python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" <<'PY'
+python3 - "$MODULE" "$ROOT" "$MANAGER/app/build.gradle.kts" "$MANAGER/app/src/main/res/values/strings.xml" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/HomeScreen.kt" "$MANAGER/app/src/main/java/app/morphe/manager/ui/screen/shared/MainNavigation.kt" <<'PY'
 from pathlib import Path
 import sys
 
@@ -67,6 +70,7 @@ app_gradle = Path(sys.argv[3])
 strings_xml = Path(sys.argv[4])
 main_navigation = Path(sys.argv[5])
 home_screen = Path(sys.argv[6])
+main_navigation = Path(sys.argv[7])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
@@ -124,7 +128,44 @@ if "MainPage.VYRA_STORE -> VyraStorePage" not in home_text_ui:
             )
 
 """ + page_anchor, 1)
+
+# Replace the upstream app-manager landing page with VYRA's own branded dashboard.
+home_import = "import app.morphe.manager.ui.screen.vyra.VyraHomePage"
+if home_import not in home_text_ui:
+    anchor = "import app.morphe.manager.ui.screen.vyra.VyraStorePage"
+    if anchor not in home_text_ui:
+        raise SystemExit("ERROR: VYRA Store import missing; refusing unsafe home replacement.")
+    home_text_ui = home_text_ui.replace(anchor, anchor + "\n" + home_import, 1)
+
+home_text_ui = home_text_ui.replace(
+    "                MainPage.APPS -> sectionState.isFooterBarVisible",
+    "                MainPage.APPS -> false",
+    1
+)
+
+apps_page_anchor = "            MainPage.APPS -> AppPullToRefreshBox("
+apps_page_start = home_text_ui.find(apps_page_anchor)
+apps_page_end = home_text_ui.rfind("\n        }\n    }\n}")
+if apps_page_start < 0 or apps_page_end < apps_page_start:
+    raise SystemExit("ERROR: HomeScreen app page structure changed; refusing unsafe VYRA home replacement.")
+vyra_home_branch = """            MainPage.APPS -> VyraHomePage(
+                bottomBarHeight = bottomBarHeight,
+                onOpenStore = { openPage(MainPage.VYRA_STORE) },
+                onOpenSources = { openPage(MainPage.SOURCES) }
+            )
+"""
+home_text_ui = home_text_ui[:apps_page_start] + vyra_home_branch + home_text_ui[apps_page_end:]
 home_screen.write_text(home_text_ui, encoding="utf-8")
+
+# Rename the app page in the native navigation without changing upstream identifiers.
+navigation_text = main_navigation.read_text(encoding="utf-8")
+navigation_text = navigation_text.replace(
+    "APPS(R.string.apps, MaterialSymbols.Rounded.Apps)",
+    "APPS(R.string.vyra_home, MaterialSymbols.Rounded.Apps)",
+    1
+)
+main_navigation.write_text(navigation_text, encoding="utf-8")
+
 
 patch_flow = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/PatchFlow.kt"
 home_vm = root / "upstream/morphe-manager/app/src/main/java/app/morphe/manager/ui/viewmodel/HomeViewModel.kt"
@@ -204,6 +245,13 @@ strings_text = strings_xml.read_text(encoding="utf-8-sig")
 old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
 new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
 store_string = '<string name="vyra_store">VYRA Store</string>'
+home_string = '<string name="vyra_home">VYRA</string>'
+if home_string not in strings_text:
+    closing = "</resources>"
+    if strings_text.count(closing) != 1:
+        raise SystemExit("ERROR: unexpected strings.xml structure; refusing home label edit.")
+    strings_text = strings_text.replace(closing, "    " + home_string + "\n" + closing, 1)
+
 if store_string not in strings_text:
     closing = "</resources>"
     if strings_text.count(closing) != 1:
