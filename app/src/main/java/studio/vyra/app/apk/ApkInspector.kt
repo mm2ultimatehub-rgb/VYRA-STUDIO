@@ -10,6 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class ApkInspector(private val context: Context) {
+    private companion object {
+        const val MAX_APK_BYTES = 500L * 1024L * 1024L
+    }
+
     suspend fun inspect(uri: Uri): ApkInspection = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val displayName = resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
@@ -23,12 +27,18 @@ class ApkInspector(private val context: Context) {
             resolver.openInputStream(uri)?.use { input ->
                 tempFile.outputStream().buffered().use { output ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var totalBytes = 0L
                     while (true) {
                         val count = input.read(buffer)
                         if (count < 0) break
+                        totalBytes += count
+                        require(totalBytes <= MAX_APK_BYTES) {
+                            "APK exceeds VYRA's 500 MB inspection limit."
+                        }
                         digest.update(buffer, 0, count)
                         output.write(buffer, 0, count)
                     }
+                    require(totalBytes > 0L) { "The selected APK file is empty." }
                 }
             } ?: throw IllegalArgumentException("The selected file could not be opened.")
 
