@@ -245,7 +245,7 @@ strings_text = strings_xml.read_text(encoding="utf-8-sig")
 # Internal package names, source repositories, license notices and code identifiers stay untouched.
 strings_text = strings_text.replace("Morphe", "VYRA")
 
-old_app_name = '<string name="app_name" translatable="false">Morphe</string>'
+old_app_name = '<string name="app_name" translatable="false">VYRA</string>'
 new_app_name = '<string name="app_name" translatable="false">VYRA Studio</string>'
 store_string = '<string name="vyra_store">VYRA Store</string>'
 home_string = '<string name="vyra_home">VYRA</string>'
