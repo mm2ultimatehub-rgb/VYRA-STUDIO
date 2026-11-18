@@ -70,7 +70,6 @@ app_gradle = Path(sys.argv[3])
 strings_xml = Path(sys.argv[4])
 main_navigation = Path(sys.argv[5])
 home_screen = Path(sys.argv[6])
-main_navigation = Path(sys.argv[7])
 text = path.read_text(encoding="utf-8")
 import_line = "import app.morphe.manager.domain.repository.VyraLocalBundleImporter"
 registration = "    singleOf(::VyraLocalBundleImporter)"
