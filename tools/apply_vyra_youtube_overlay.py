@@ -7,12 +7,13 @@ ROOT = Path.cwd()
 NAV = ROOT / "patches/src/main/kotlin/app/morphe/patches/youtube/layout/buttons/navigation/NavigationBarPatch.kt"
 SETTINGS = ROOT / "patches/src/main/kotlin/app/morphe/patches/youtube/misc/settings/SettingsPatch.kt"
 YOUTUBE_STRINGS = ROOT / "patches/src/main/resources/addresources/values/youtube/strings.xml"
+PATCH_BUILD = ROOT / "patches/build.gradle.kts"
 
 def fail(message: str) -> None:
     print(f"VYRA overlay error: {message}", file=sys.stderr)
     raise SystemExit(2)
 
-for path in (NAV, SETTINGS, YOUTUBE_STRINGS):
+for path in (NAV, SETTINGS, YOUTUBE_STRINGS, PATCH_BUILD):
     if not path.is_file():
         fail(f"missing pinned upstream file: {path}")
 
@@ -99,4 +100,18 @@ if 'name="vyra_settings_title"' not in xml or 'name="vyra_appearance_title"' not
     fail("failed to add VYRA YouTube-only string resources")
 YOUTUBE_STRINGS.write_text(xml, encoding="utf-8")
 
-print("VYRA overlay applied: YouTube-only settings title and Appearance screen are wired.")
+
+build_script = PATCH_BUILD.read_text(encoding="utf-8")
+metadata_replacements = {
+    'name = "Morphe Patches"': 'name = "VYRA YouTube Patches"',
+    'description = "Patches for Morphe"': 'description = "VYRA visual and experience patches for YouTube"',
+    'source = "git@github.com:MorpheApp/morphe-patches.git"': 'source = "https://github.com/mm2ultimatehub-rgb/VYRA-STUDIO"',
+    'author = "MorpheApp"': 'author = "VYRA Project"',
+}
+for old, new in metadata_replacements.items():
+    if build_script.count(old) != 1:
+        fail(f"expected exactly one patch bundle metadata anchor: {old}")
+    build_script = build_script.replace(old, new, 1)
+PATCH_BUILD.write_text(build_script, encoding="utf-8")
+
+print("VYRA overlay applied: YouTube-only settings title, Appearance screen and bundle identity are wired.")
