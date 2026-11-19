@@ -57,6 +57,39 @@ class MppArchiveValidatorTest {
     }
 
     @Test
+    fun `rejects absolute windows drive and ambiguous archive paths`() {
+        val unsafeNames = listOf(
+            "/absolute.dex",
+            "C:/drive.dex",
+            "folder//nested.dex",
+            "folder/./nested.dex",
+            "folder/../nested.dex"
+        )
+        unsafeNames.forEach { name ->
+            val file = archive(name to byteArrayOf(1))
+            try {
+                assertFailsWith<IllegalArgumentException>(name) {
+                    MppArchiveValidator.inspect(file)
+                }
+            } finally {
+                file.delete()
+            }
+        }
+    }
+
+    @Test
+    fun `rejects an archive entry with a null byte in its name`() {
+        val file = archive("folder/\u0000payload.dex" to byteArrayOf(1))
+        try {
+            assertFailsWith<IllegalArgumentException> {
+                MppArchiveValidator.inspect(file)
+            }
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
     fun `counts actual decompressed bytes against the configured limit`() {
         val file = archive("classes.dex" to ByteArray(64) { 7 })
         try {
