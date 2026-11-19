@@ -40,6 +40,7 @@ The GitHub Actions workflow is defined at .github/workflows/android-ci.yml. See 
 - [Morphe Manager adoption plan](docs/UPSTREAM-ADOPTION-PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Engine integration research](docs/ENGINE-INTEGRATION-RESEARCH.md)
+- [Verified patcher runtime adoption contract](docs/PATCHER-RUNTIME-ADOPTION.md)
 - [Upstream research and license notes](docs/UPSTREAM-RESEARCH.md)
 - [Roadmap](docs/ROADMAP.md)
 
