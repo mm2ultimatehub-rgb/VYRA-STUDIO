@@ -16,6 +16,7 @@ if not NAV.is_file():
 
 source = NAV.read_text(encoding="utf-8")
 old_group = '''        navPreferences += listOf(
+            SwitchPreference("morphe_hide_navigation_new_content_dot"),
             SwitchPreference("morphe_navigation_bar_animations", summary = true),
             ListPreference("morphe_navigation_bar_style"),
             SwitchPreference("morphe_navigation_bar_glass", summary = true),
@@ -33,9 +34,10 @@ old_group = '''        navPreferences += listOf(
                 selectable = true
             )
         )'''
-new_group = '''        // Keep the stock navigation style selector in General. VYRA appearance
-        // controls are registered on their own screen below.
+new_group = '''        // Keep ordinary navigation controls in General. VYRA appearance controls
+        // are registered on their own screen below.
         navPreferences += listOf(
+            SwitchPreference("morphe_hide_navigation_new_content_dot"),
             ListPreference("morphe_navigation_bar_style")
         )'''
 if source.count(old_group) != 1:
@@ -79,27 +81,33 @@ if source.count(anchor) != 1:
 source = source.replace(anchor, addition, 1)
 NAV.write_text(source, encoding="utf-8")
 
-resources = ROOT / "patches/src/main/resources/addresources/values/youtube/strings.xml"
-if not resources.is_file():
-    fail(f"missing pinned YouTube string resources: {resources}")
-xml = resources.read_text(encoding="utf-8")
-xml, count = re.subn(
+shared_strings = ROOT / "patches/src/main/resources/addresources/values/shared/strings.xml"
+youtube_strings = ROOT / "patches/src/main/resources/addresources/values/youtube/strings.xml"
+for path in (shared_strings, youtube_strings):
+    if not path.is_file():
+        fail(f"missing pinned resource file: {path}")
+
+shared_xml = shared_strings.read_text(encoding="utf-8")
+shared_xml, count = re.subn(
     r'<string\s+name="morphe_settings_title"[^>]*>.*?</string>',
-    '<string name="morphe_settings_title">VYRA MOD</string>',
-    xml,
+    '<string name="morphe_settings_title" translatable="false">VYRA MOD</string>',
+    shared_xml,
     count=1,
     flags=re.DOTALL,
 )
 if count != 1:
-    fail("could not rename the existing visible settings title")
-if 'name="vyra_appearance_title"' not in xml:
-    xml, count = re.subn(
+    fail("could not rename the visible root settings title")
+shared_strings.write_text(shared_xml, encoding="utf-8")
+
+youtube_xml = youtube_strings.read_text(encoding="utf-8")
+if 'name="vyra_appearance_title"' not in youtube_xml:
+    youtube_xml, count = re.subn(
         r"</resources>\s*$",
         '    <string name="vyra_appearance_title">VYRA Appearance</string>\n</resources>\n',
-        xml,
+        youtube_xml,
     )
     if count != 1:
         fail("could not append the VYRA Appearance title resource")
-resources.write_text(xml, encoding="utf-8")
+    youtube_strings.write_text(youtube_xml, encoding="utf-8")
 
-print("VYRA overlay applied: root title and appearance preference group updated.")
+print("VYRA overlay applied: visible root title renamed and Glass/motion controls grouped under VYRA Appearance.")
