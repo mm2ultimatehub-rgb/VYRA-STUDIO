@@ -1,6 +1,8 @@
 name: Build VYRA YouTube patch bundle
 
 on:
+  push:
+    branches: [vyra-youtube-mod]
   workflow_dispatch:
 
 permissions:
@@ -8,7 +10,45 @@ permissions:
   packages: read
 
 jobs:
+  validate-overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Check out pinned Morphe Patches source
+        uses: actions/checkout@v4
+        with:
+          repository: MorpheApp/morphe-patches
+          ref: 31234a8465683a389bcfba25ad636fd1cd38fd02
+          path: morphe-patches
+
+      - name: Check out VYRA overlay
+        uses: actions/checkout@v4
+        with:
+          repository: mm2ultimatehub-rgb/VYRA-STUDIO
+          ref: vyra-youtube-mod
+          path: vyra-studio
+
+      - name: Apply and validate VYRA source overlay
+        run: |
+          python3 -m py_compile vyra-studio/tools/apply_vyra_youtube_overlay.py
+          python3 vyra-studio/tools/apply_vyra_youtube_overlay.py
+          git diff --check
+          grep -q 'key = "vyra_appearance_screen"' patches/src/main/kotlin/app/morphe/patches/youtube/layout/buttons/navigation/NavigationBarPatch.kt
+          grep -q 'VYRA MOD' patches/src/main/resources/addresources/values/shared/strings.xml
+          grep -q 'vyra_appearance_title' patches/src/main/resources/addresources/values/youtube/strings.xml
+          if git diff --quiet; then
+            echo "::error::VYRA overlay made no source changes."
+            exit 1
+          fi
+        working-directory: morphe-patches
+
   build-vyra-patches:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-overlay
     runs-on: ubuntu-latest
     steps:
       - name: Set up JDK 17
