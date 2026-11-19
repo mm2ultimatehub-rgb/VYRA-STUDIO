@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "vyra-youtube-mod",
   "name": "VYRA MOD for YouTube",
-  "status": "source-overlay-implemented-build-pending",
+  "status": "source-overlay-validated-build-pending",
   "target": {
     "packageName": "com.google.android.youtube",
     "versions": [
@@ -55,5 +55,12 @@
     "respectReducedMotion": true,
     "noProprietaryApkRedistribution": true,
     "noAutomaticExecutionOfUntrustedBundles": true
+  },
+  "validation": {
+    "workflow": "Build VYRA YouTube patch bundle",
+    "run_url": "https://github.com/mm2ultimatehub-rgb/VYRA-STUDIO/actions/runs/44620459848",
+    "commit": "d706052dab22d4a9e613555b71a831bae2f1aa68",
+    "result": "success",
+    "scope": "source overlay validation only; no .mpp or APK produced"
   }
 }
