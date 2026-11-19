@@ -1,0 +1,59 @@
+name: Build VYRA YouTube patch bundle
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-vyra-patches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Check out pinned Morphe Patches source
+        uses: actions/checkout@v4
+        with:
+          repository: MorpheApp/morphe-patches
+          ref: 31234a8465683a389bcfba25ad636fd1cd38fd02
+          path: morphe-patches
+
+      - name: Check out VYRA overlay
+        uses: actions/checkout@v4
+        with:
+          repository: mm2ultimatehub-rgb/VYRA-STUDIO
+          ref: vyra-youtube-mod
+          path: vyra-studio
+
+      - name: Apply VYRA source overlay
+        run: python3 vyra-studio/tools/apply_vyra_youtube_overlay.py
+        working-directory: morphe-patches
+
+      - name: Build Android patch bundle
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.MORPHE_GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_gpr_user: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_gpr_key: ${{ secrets.MORPHE_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "::error::Add MORPHE_GITHUB_TOKEN (read:packages) to repository Actions secrets."
+            exit 1
+          fi
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :patches:buildAndroid
+        working-directory: morphe-patches
+
+      - name: Upload VYRA patch bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyra-youtube-patch-bundle
+          path: morphe-patches/patches/build/libs/*.mpp
+          if-no-files-found: error
+          retention-days: 14
