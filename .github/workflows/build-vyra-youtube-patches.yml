@@ -50,7 +50,6 @@ jobs:
         working-directory: morphe-patches
 
   build-vyra-patches:
-    if: github.event_name == 'workflow_dispatch'
     needs: validate-overlay
     runs-on: ubuntu-latest
     steps:
