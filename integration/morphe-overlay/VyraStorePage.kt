@@ -182,7 +182,24 @@ fun VyraStorePage(
                 )
             }
             items(filteredApps, key = { it.packageName }) { app ->
-                val selectable = app.status != "unsupported"
+                val normalizedStatus = app.status.lowercase()
+                val selectable = normalizedStatus in setOf("verified", "candidate", "experimental")
+                val statusLabel = when (normalizedStatus) {
+                    "verified" -> "DOĞRULANMIŞ"
+                    "candidate" -> "ADAY DESTEK"
+                    "experimental" -> "DENEYSEL"
+                    "no-source" -> "YAMA KAYNAĞI YOK"
+                    "unsupported" -> "DESTEKLENMİYOR"
+                    else -> "DURUM: ${normalizedStatus.replace('-', ' ').uppercase()}"
+                }
+                val statusDescription = when (normalizedStatus) {
+                    "verified" -> "Uyumluluğu doğrulanmış yama kaynağı mevcut."
+                    "candidate" -> "Yama adayı bulundu; tam sürüm uyumluluğu ayrıca kontrol edilecek."
+                    "experimental" -> "Deneysel durum: uygun yama bulunacağı garanti edilmez."
+                    "no-source" -> "Bu uygulama için henüz katalogda yama kaynağı yok."
+                    "unsupported" -> "Bu uygulama şu anda yama akışına alınamıyor."
+                    else -> "Destek durumu henüz belirlenmedi; işlem öncesi uyumluluk kontrolü gerekir."
+                }
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -223,10 +240,16 @@ fun VyraStorePage(
                             }
                         }
                         Text(
-                            app.status.replace('-', ' ').uppercase(),
-                            color = MaterialTheme.colorScheme.primary,
+                            statusLabel,
+                            color = if (normalizedStatus == "verified") MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            statusDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             "Kategori: ${app.category}",
@@ -234,7 +257,8 @@ fun VyraStorePage(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            if (selectable) "Yama seçeneklerini aç" else "Henüz yama kaynağı bulunmuyor",
+                            if (selectable) "Uygulamayı seç ve tam sürüm uyumluluğunu kontrol et"
+                            else "Şimdilik seçilemiyor",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
