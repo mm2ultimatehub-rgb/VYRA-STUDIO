@@ -35,6 +35,12 @@ gradle testDebugUnitTest assembleDebug
 
 The GitHub Actions workflow is defined at .github/workflows/android-ci.yml. See the repository Actions tab for verified build results and artifacts.
 
+## YouTube VYRA MOD patch bundle
+
+A pinned-source overlay now groups the existing YouTube Glass navigation and motion preferences under a VYRA Appearance page and changes the visible settings title to VYRA MOD. The overlay is validated by `.github/workflows/build-vyra-youtube-patches.yml` on pushes to `vyra-youtube-mod`. To build the `.mpp` artifact, configure the `MORPHE_GITHUB_TOKEN` Actions secret with `read:packages`, then run that workflow manually. See [Build the VYRA YouTube patch bundle](docs/BUILD-VYRA-PATCH-BUNDLE.md).
+
+This is a patch-bundle source integration step, not a ready-to-install YouTube APK. The APK still needs to be patched, signed, and device-tested.
+
 ## Research and architecture
 
 - [Morphe Manager adoption plan](docs/UPSTREAM-ADOPTION-PLAN.md)
