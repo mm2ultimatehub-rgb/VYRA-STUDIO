@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vyra-youtube-mod",
+  "name": "VYRA MOD for YouTube",
+  "status": "design-only",
+  "target": {
+    "packageName": "com.google.android.youtube",
+    "versions": [
+      "21.30.216"
+    ],
+    "minSdk": 29
+  },
+  "upstream": {
+    "publisher": "MorpheApp",
+    "repository": "https://github.com/MorpheApp/morphe-patches",
+    "release": "2.3.0",
+    "sourceReference": "https://github.com/MorpheApp/morphe-patches/tree/main"
+  },
+  "entryPoint": "YouTube Settings > VYRA MOD",
+  "defaults": {
+    "vyra_mod_enabled": false,
+    "vyra_glass_navigation": false,
+    "vyra_animated_navigation": false,
+    "vyra_glass_opacity": 20,
+    "vyra_glass_roundness": 30,
+    "vyra_accent_color": "system",
+    "vyra_player_style": "default"
+  },
+  "modules": [
+    {
+      "id": "vyra-settings",
+      "status": "planned",
+      "description": "VYRA MOD settings page and preference storage"
+    },
+    {
+      "id": "vyra-glass-navigation",
+      "status": "planned",
+      "reuse": "Morphe upstream YouTubeGlassNavigationBar",
+      "description": "Opt-in glass capsule using upstream renderer"
+    },
+    {
+      "id": "vyra-navigation-motion",
+      "status": "planned",
+      "description": "Accessible selected-tab and icon-state animations"
+    },
+    {
+      "id": "vyra-player-style",
+      "status": "planned",
+      "description": "Opt-in player appearance customization"
+    }
+  ],
+  "safety": {
+    "preserveDefaultUi": true,
+    "requireMasterSwitch": true,
+    "respectReducedMotion": true,
+    "noProprietaryApkRedistribution": true,
+    "noAutomaticExecutionOfUntrustedBundles": true
+  }
+}
