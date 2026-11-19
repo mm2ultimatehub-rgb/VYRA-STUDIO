@@ -38,7 +38,8 @@ jobs:
           python3 vyra-studio/tools/apply_vyra_youtube_overlay.py
           git diff --check
           grep -q 'key = "vyra_appearance_screen"' patches/src/main/kotlin/app/morphe/patches/youtube/layout/buttons/navigation/NavigationBarPatch.kt
-          grep -q 'VYRA MOD' patches/src/main/resources/addresources/values/shared/strings.xml
+          grep -q 'titleKey = "vyra_settings_title"' patches/src/main/kotlin/app/morphe/patches/youtube/misc/settings/SettingsPatch.kt
+          grep -q 'VYRA MOD' patches/src/main/resources/addresources/values/youtube/strings.xml
           grep -q 'vyra_appearance_title' patches/src/main/resources/addresources/values/youtube/strings.xml
           if git diff --quiet; then
             echo "::error::VYRA overlay made no source changes."
