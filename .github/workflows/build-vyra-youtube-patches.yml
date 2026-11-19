@@ -41,6 +41,8 @@ jobs:
           grep -q 'titleKey = "vyra_settings_title"' patches/src/main/kotlin/app/morphe/patches/youtube/misc/settings/SettingsPatch.kt
           grep -q 'VYRA MOD' patches/src/main/resources/addresources/values/youtube/strings.xml
           grep -q 'vyra_appearance_title' patches/src/main/resources/addresources/values/youtube/strings.xml
+          grep -q 'name = "VYRA YouTube Patches"' patches/build.gradle.kts
+          grep -q 'VYRA visual and experience patches for YouTube' patches/build.gradle.kts
           if git diff --quiet; then
             echo "::error::VYRA overlay made no source changes."
             exit 1
