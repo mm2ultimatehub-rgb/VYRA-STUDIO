@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "lockedAt": "2026-11-20",
+  "target": {
+    "packageName": "com.google.android.youtube",
+    "versionName": "21.30.216",
+    "minSdk": 29,
+    "status": "upstream-listed-not-vyra-verified"
+  },
+  "sources": [
+    {
+      "name": "Morphe Manager",
+      "repository": "https://github.com/MorpheApp/morphe-manager",
+      "release": "2.6.0",
+      "commit": "d9f56746d13890c0f8837c6d070dae6f210ad2a9",
+      "license": "GPL-3.0",
+      "noticeRequired": true
+    },
+    {
+      "name": "Morphe Patcher",
+      "repository": "https://github.com/MorpheApp/morphe-patcher",
+      "release": "2.4.0",
+      "commit": "0aed87c4e3264cf9233feab7ed26cf2543a08b96",
+      "license": "GPL-3.0",
+      "noticeRequired": true
+    },
+    {
+      "name": "Morphe Patches",
+      "repository": "https://github.com/MorpheApp/morphe-patches",
+      "release": "2.3.0",
+      "commit": "31234a8465683a389bcfba25ad636fd1cd38fd02",
+      "license": "GPL-3.0",
+      "noticeRequired": true,
+      "relevantUpstreamFeatures": [
+        "YouTube glass navigation capsule",
+        "YouTube navigation bar animations",
+        "YouTube navigation bar style and glass opacity/size/roundness/button spacing"
+      ]
+    }
+  ],
+  "integrationNotes": [
+    "Do not use floating main/latest references for reproducible builds.",
+    "Keep upstream source attribution and NOTICE files.",
+    "Review GPL-3.0 Section 7 conditions and dependency licenses before distributing a derivative.",
+    "This lock records source revisions only; it does not mean the VYRA runtime is integrated or that an APK was built."
+  ]
+}
