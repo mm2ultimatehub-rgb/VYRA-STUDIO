@@ -90,9 +90,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create v0.1.1 app/build/outputs/apk/release/app-release.apk \
-            --title "VYRA Store v0.1.1" \
-            --notes "VYRA Store 0.1.1: monochrome liquid-glass interface and Updates center. APK built and signature-verified by Android CI."
+          VERSION_NAME="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)"
+          test -n "$VERSION_NAME"
+          TAG="v$VERSION_NAME"
+          gh release create "$TAG" app/build/outputs/apk/release/app-release.apk \
+            --title "VYRA Store $VERSION_NAME" \
+            --notes "VYRA Store $VERSION_NAME: real APK download with live liquid-glass progress and SHA-256 verification. APK built and signature-verified by Android CI."
 
       - name: Upload signed release APK for internal verification only
         if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
