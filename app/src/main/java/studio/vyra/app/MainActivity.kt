@@ -1,6 +1,7 @@
 package studio.vyra.app
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -65,6 +66,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.layout.ContentScale
@@ -76,6 +79,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.URL
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
 import studio.vyra.app.catalog.StoreCatalogClient
@@ -386,7 +390,19 @@ private fun StoreScreen(padding: PaddingValues) {
                     modifier = Modifier.fillMaxWidth().padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CatalogAppIcon(app.iconUrl)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            app.versionName?.let {
+                                Text("Version $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                     Text(
                         "${app.category.uppercase()} · ${app.packageName}",
                         style = MaterialTheme.typography.labelSmall,
@@ -407,25 +423,14 @@ private fun StoreScreen(padding: PaddingValues) {
                     }
                     Button(
                         onClick = {
-                            val marketIntent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("market://details?id=${app.packageName}"),
-                            )
-                            try {
-                                context.startActivity(marketIntent)
-                            } catch (_: Exception) {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        Uri.parse("https://play.google.com/store/apps/details?id=${app.packageName}"),
-                                    ),
-                                )
-                            }
+                            val targetUrl = app.downloadUrl
+                                ?: "https://play.google.com/store/apps/details?id=${app.packageName}"
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Open official app page")
+                        Text(if (app.downloadUrl != null) "Download VYRA APK" else "Open official app page")
                     }
                 }
             }
@@ -840,5 +845,40 @@ private fun ActionCard(title: String, description: String, action: String, onCli
 private fun BoxCenter(content: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         content()
+    }
+}
+
+@Composable
+private fun CatalogAppIcon(url: String?) {
+    var bitmap by remember(url) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(url) {
+        bitmap = if (url.isNullOrBlank()) null else withContext(Dispatchers.IO) {
+            runCatching {
+                URL(url).openConnection().apply {
+                    connectTimeout = 8_000
+                    readTimeout = 8_000
+                }.getInputStream().use { stream ->
+                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                }
+            }.getOrNull()
+        }
+    }
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap!!,
+            contentDescription = "VYRA app logo",
+            modifier = Modifier.size(52.dp),
+            contentScale = ContentScale.Fit,
+        )
+    } else {
+        Box(
+            modifier = Modifier.size(52.dp).background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(14.dp),
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Store, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
     }
 }
