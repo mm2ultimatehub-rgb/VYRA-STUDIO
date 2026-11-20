@@ -4,6 +4,13 @@ VYRA STUDIO is an Android APK patching project intended to use the Morphe Manage
 
 ## Product direction
 
+The user-facing Android app is now named **VYRA Store**. The existing VYRA Studio codebase is being evolved into the Store app, with patching/creation tools remaining supporting features.
+
+The Store screen loads the central app list from [VYRA Repository](https://github.com/mm2ultimatehub-rgb/VYRA-REPOSITORY). Catalog-only apps open their official app-store page. VYRA download/update actions must remain disabled until a real APK release has passed package, signature, checksum, install, and smoke-test verification.
+
+See [VYRA Store product scope](docs/PRODUCT.md) for the full product definition and current implementation boundary.
+
+
 The goal is not to build an unrelated APK inspector. VYRA aims to provide a complete patching workflow: APK and split-APK import, compatible patch discovery, patch options, patch execution, progress/logging/cancellation, APK rebuild, signing, validation, and export.
 
 The planned implementation strategy is documented in [Morphe Manager adoption plan](docs/UPSTREAM-ADOPTION-PLAN.md).
