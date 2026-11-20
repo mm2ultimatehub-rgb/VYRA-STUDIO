@@ -65,6 +65,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import studio.vyra.app.apk.ApkInspection
 import studio.vyra.app.apk.ApkInspector
+import studio.vyra.app.catalog.StoreCatalogClient
+import studio.vyra.app.catalog.StoreCatalogEntry
 import studio.vyra.app.repository.PatchArtifactDownloader
 import studio.vyra.app.repository.PatchCompatibility
 import studio.vyra.app.repository.MppBundleInspector
@@ -223,13 +225,71 @@ private fun OverviewScreen(
 @Composable
 private fun StoreScreen(padding: PaddingValues) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var catalog by remember { mutableStateOf<List<StoreCatalogEntry>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var catalogError by remember { mutableStateOf<String?>(null) }
+
+    val refreshCatalog: () -> Unit = {
+        scope.launch {
+            isLoading = true
+            catalogError = null
+            try {
+                catalog = withContext(Dispatchers.IO) {
+                    StoreCatalogClient().fetch()
+                }
+            } catch (error: Exception) {
+                catalogError = error.message ?: "Could not load the VYRA app catalog."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshCatalog()
+    }
+
     PageColumn(padding) {
         PageHeading("VYRA Store", "Browse apps and see exactly what VYRA supports.")
         InfoCard(
             "App catalog",
-            "Choose an app to open its official store listing. VYRA downloads and updates will appear here only after a compatible build has been published and verified.",
+            "This list is loaded from the central VYRA Repository. Apps without a verified VYRA build open their official store page instead.",
         )
-        studio.vyra.app.catalog.AppCatalog.apps.forEach { app ->
+        Button(
+            onClick = refreshCatalog,
+            enabled = !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Text(if (isLoading) "Refreshing catalog…" else "Refresh catalog")
+        }
+        if (isLoading) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text("Loading apps from VYRA Repository…", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        catalogError?.let { message ->
+            InfoCard("Catalog unavailable", message)
+        }
+        if (catalog.isEmpty() && !isLoading) {
+            InfoCard(
+                "No apps loaded",
+                "Connect to the internet and refresh the catalog. No app download is offered until its source is verified.",
+            )
+        }
+        catalog.forEach { app ->
+            val statusDetail = when (app.status) {
+                "candidate" -> "An upstream patch source is listed. Exact APK compatibility and a VYRA build are not yet verified."
+                "experimental" -> "A community source is listed. Manual review and device testing are still required."
+                "verified" -> "A VYRA build is marked verified. Release metadata must be available before download is enabled."
+                "unsupported" -> "No compatible patch source is currently known."
+                else -> "Catalog listing only. VYRA has not published a modified APK for this app."
+            }
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(18.dp),
@@ -239,12 +299,30 @@ private fun StoreScreen(padding: PaddingValues) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(app.packageName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(app.availability.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(app.availability.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${app.category.uppercase()} · ${app.packageName}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        app.status.replace('-', ' ').uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(statusDetail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (app.patchSourceIds.isNotEmpty()) {
+                        Text(
+                            "Patch sources: ${app.patchSourceIds.joinToString()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Button(
                         onClick = {
-                            val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${app.packageName}"))
+                            val marketIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("market://details?id=${app.packageName}"),
+                            )
                             try {
                                 context.startActivity(marketIntent)
                             } catch (_: Exception) {
@@ -265,8 +343,8 @@ private fun StoreScreen(padding: PaddingValues) {
             }
         }
         InfoCard(
-            "Safety and compatibility",
-            "A listed app is not automatically patchable. VYRA will enable its own download and update actions only after the exact APK, patch bundle, signing identity, and installation flow have been verified.",
+            "Safe downloads and updates",
+            "VYRA download and update actions will appear only after the exact APK, package identity, signing certificate, file size, and SHA-256 have been verified.",
         )
     }
 }
