@@ -375,7 +375,9 @@ private fun StoreScreen(padding: PaddingValues) {
             )
         }
         catalog.forEach { app ->
-            val statusDetail = when (app.status) {
+            val statusDetail = if (app.id == "vyra-youtube") {
+                "VYRA APK published and signature-checked. Installation and on-device smoke testing are still pending."
+            } else when (app.status) {
                 "candidate" -> "An upstream patch source is listed. Exact APK compatibility and a VYRA build are not yet verified."
                 "experimental" -> "A community source is listed. Manual review and device testing are still required."
                 "verified" -> "A VYRA build is marked verified. Release metadata must be available before download is enabled."
@@ -437,7 +439,7 @@ private fun StoreScreen(padding: PaddingValues) {
         }
         InfoCard(
             "Safe downloads and updates",
-            "VYRA download and update actions will appear only after the exact APK, package identity, signing certificate, file size, and SHA-256 have been verified.",
+            "VYRA YouTube 21.30.217 is published with its APK SHA-256 and signing certificate recorded in the catalog. Device installation and smoke testing are still pending.",
         )
     }
 }
