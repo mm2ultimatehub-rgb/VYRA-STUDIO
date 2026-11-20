@@ -12,8 +12,8 @@ android {
         applicationId = "studio.vyra.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
     }
 
     // Release signing is supplied only by the CI environment. Never commit a keystore.
