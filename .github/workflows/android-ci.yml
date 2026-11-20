@@ -90,6 +90,15 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK"
           "$APKSIGNER" verify --print-certs "$APK"
 
+      # Keep a downloadable signed artifact even if GitHub Release publishing has a problem.
+      - name: Upload signed release APK
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyra-store-signed-release
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
       - name: Publish signed APK as GitHub Release
         if: github.event_name == 'push'
         env:
@@ -99,17 +108,13 @@ jobs:
           VERSION_NAME="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)"
           test -n "$VERSION_NAME"
           TAG="v$VERSION_NAME"
-          gh release create "$TAG" app/build/outputs/apk/release/app-release.apk \
-            --title "VYRA Store $VERSION_NAME" \
-            --notes "VYRA Store $VERSION_NAME: APK built and signature-verified by Android CI."
-
-      - name: Upload signed release APK
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: vyra-store-signed-release
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" app/build/outputs/apk/release/app-release.apk --clobber
+          else
+            gh release create "$TAG" app/build/outputs/apk/release/app-release.apk \
+              --title "VYRA Store $VERSION_NAME" \
+              --notes "VYRA Store $VERSION_NAME: APK built and signature-verified by Android CI."
+          fi
 
       - name: Remove temporary signing key
         if: always()
