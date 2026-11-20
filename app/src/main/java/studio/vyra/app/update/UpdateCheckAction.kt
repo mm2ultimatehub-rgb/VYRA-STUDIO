@@ -13,6 +13,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +50,7 @@ fun UpdateCheckAction() {
     var isDownloading by remember { mutableStateOf(false) }
 
     IconButton(
+        modifier = Modifier.padding(end = 8.dp).background(Color.White.copy(alpha = 0.08f), CircleShape).border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape),
         onClick = {
             if (!checking) {
                 checking = true

@@ -13,21 +13,36 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Soft blurred monochrome light behind the store's translucent surfaces. */
+/** Layered monochrome light fields behind translucent VYRA surfaces. */
 @Composable
 fun GlassBackdrop() {
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.offset(x = (-105).dp, y = 105.dp).size(290.dp).blur(72.dp)
-                .background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.17f), Color(0xFF9CA3AF).copy(alpha = 0.06f), Color.Transparent)), CircleShape)
+            Modifier.offset(x = (-118).dp, y = 72.dp).size(330.dp).blur(86.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = 0.19f), Color(0xFFB8C0CE).copy(alpha = 0.075f), Color.Transparent)
+                    ),
+                    CircleShape,
+                )
         )
         Box(
-            Modifier.offset(x = 190.dp, y = 390.dp).size(250.dp).blur(80.dp)
-                .background(Brush.radialGradient(listOf(Color(0xFFD9DEE7).copy(alpha = 0.12f), Color.White.copy(alpha = 0.035f), Color.Transparent)), CircleShape)
+            Modifier.offset(x = 175.dp, y = 330.dp).size(290.dp).blur(92.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0xFFDCE3EF).copy(alpha = 0.12f), Color.White.copy(alpha = 0.035f), Color.Transparent)
+                    ),
+                    CircleShape,
+                )
         )
         Box(
-            Modifier.offset(x = 55.dp, y = 690.dp).size(220.dp).blur(64.dp)
-                .background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.10f), Color.Transparent)), CircleShape)
+            Modifier.offset(x = (-35).dp, y = 650.dp).size(270.dp).blur(78.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = 0.11f), Color.Transparent)
+                    ),
+                    CircleShape,
+                )
         )
     }
 }

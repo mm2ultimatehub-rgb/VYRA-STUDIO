@@ -1,7 +1,13 @@
 package studio.vyra.app.update
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +56,8 @@ fun LiquidGlassDownloadDialog(
     onStart: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val transition = rememberInfiniteTransition(label = "vyra-orbit")
+    val orbit by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(7200, easing = LinearEasing)), label = "orbit")
     val totalBytes = update.fileSizeBytes
     val fraction = if (totalBytes > 0L) {
         (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
@@ -59,14 +70,15 @@ fun LiquidGlassDownloadDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
-            shape = RoundedCornerShape(30.dp),
-            color = Color(0xFF08090B),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).shadow(30.dp, RoundedCornerShape(34.dp)),
+            shape = RoundedCornerShape(34.dp),
+            color = Color(0xFF111419),
             tonalElevation = 0.dp,
         ) {
             Column(
                 modifier = Modifier
-                    .background(Brush.verticalGradient(listOf(Color(0xFF292C32), Color(0xFF101115), Color(0xFF050506))))
+                    .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = 0.48f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.22f))), RoundedCornerShape(34.dp))
+                    .background(Brush.verticalGradient(listOf(Color(0xFF343A44), Color(0xFF171B21), Color(0xFF090B0F))))
                     .padding(horizontal = 22.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -78,7 +90,7 @@ fun LiquidGlassDownloadDialog(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text("VYRA", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                        Text("SIVI CAM · GÜVENLİ İNDİRME", color = Color(0xFFB8BBC2), fontSize = 9.sp, letterSpacing = 1.5.sp)
+                        Text("LIQUID GLASS  /  SECURE UPDATE", color = Color(0xFFBFC5CF), fontSize = 9.sp, letterSpacing = 1.35.sp)
                     }
                     Text(
                         "v${update.version}",
@@ -89,7 +101,7 @@ fun LiquidGlassDownloadDialog(
                 }
                 Spacer(Modifier.height(2.dp))
                 Box(contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.size(252.dp)) {
+                    Canvas(Modifier.size(264.dp)) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val radius = min(size.width, size.height) * 0.385f
                         drawCircle(
@@ -98,7 +110,7 @@ fun LiquidGlassDownloadDialog(
                                 center = Offset(center.x - radius * 0.25f, center.y - radius * 0.52f),
                                 radius = radius * 2.1f,
                             ),
-                            radius = radius * 1.28f,
+                            radius = radius * 1.38f,
                             center = center,
                         )
                         drawCircle(Color.White.copy(alpha = 0.24f), radius, center, style = Stroke(width = 1.2.dp.toPx()))
@@ -117,6 +129,15 @@ fun LiquidGlassDownloadDialog(
                             drawPath(path, Color.White.copy(alpha = 0.20f), style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round))
                             drawPath(path, Color.White, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
                         }
+                        drawArc(
+                            brush = Brush.sweepGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.12f), Color.White, Color.Transparent), center),
+                            startAngle = orbit - 90f,
+                            sweepAngle = 72f,
+                            useCenter = false,
+                            topLeft = Offset(center.x - radius * 1.08f, center.y - radius * 1.08f),
+                            size = androidx.compose.ui.geometry.Size(radius * 2.16f, radius * 2.16f),
+                            style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round),
+                        )
                         val v = Path().apply {
                             moveTo(center.x - radius * 0.32f, center.y - radius * 0.24f)
                             lineTo(center.x - radius * 0.04f, center.y + radius * 0.30f)
@@ -147,7 +168,9 @@ fun LiquidGlassDownloadDialog(
                 Button(
                     onClick = onStart,
                     enabled = canDownload && !isDownloading && !complete,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF4F5F7), contentColor = Color(0xFF111419), disabledContainerColor = Color.White.copy(alpha = 0.14f), disabledContentColor = Color.White.copy(alpha = 0.54f)),
                 ) {
                     Text(if (isDownloading) "İndiriliyor…" else if (complete) "Kurulum açılıyor" else "Gerçek APK'yı indir ve doğrula")
                 }

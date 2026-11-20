@@ -36,20 +36,26 @@ jobs:
         with:
           gradle-version: '8.14.4'
 
-      - name: Run unit tests and build debug APK
-        run: gradle --no-daemon testDebugUnitTest assembleDebug
+      - name: Run unit tests
+        run: gradle --no-daemon testDebugUnitTest
 
-      - name: Upload debug APK
+      # Pull requests run without repository secrets, so they get a debug validation build only.
+      - name: Build debug APK for pull-request validation
+        if: github.event_name == 'pull_request'
+        run: gradle --no-daemon assembleDebug
+
+      - name: Upload debug APK for pull-request validation
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: vyra-store-debug
+          name: vyra-store-pr-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      # Every distributable build must be signed. Missing or invalid secrets fail the job.
       - name: Prepare release keystore
         id: signing
         if: github.event_name != 'pull_request'
-        continue-on-error: true
         env:
           VYRA_KEYSTORE_BASE64: ${{ secrets.VYRA_KEYSTORE_BASE64 }}
           VYRA_KEYSTORE_PASSWORD: ${{ secrets.VYRA_KEYSTORE_PASSWORD }}
@@ -70,11 +76,11 @@ jobs:
           echo "VYRA_KEY_PASSWORD=$VYRA_KEY_PASSWORD" >> "$GITHUB_ENV"
 
       - name: Build signed release APK
-        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
+        if: github.event_name != 'pull_request'
         run: gradle --no-daemon assembleRelease
 
       - name: Verify release APK signature
-        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
+        if: github.event_name != 'pull_request'
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
@@ -85,7 +91,7 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
 
       - name: Publish signed APK as GitHub Release
-        if: github.event_name == 'push' && steps.signing.outcome == 'success'
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -95,23 +101,16 @@ jobs:
           TAG="v$VERSION_NAME"
           gh release create "$TAG" app/build/outputs/apk/release/app-release.apk \
             --title "VYRA Store $VERSION_NAME" \
-            --notes "VYRA Store $VERSION_NAME: real APK download with live liquid-glass progress and SHA-256 verification. APK built and signature-verified by Android CI."
+            --notes "VYRA Store $VERSION_NAME: APK built and signature-verified by Android CI."
 
-      - name: Upload signed release APK for internal verification only
-        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
+      - name: Upload signed release APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: vyra-store-signed-release-internal
+          name: vyra-store-signed-release
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
       - name: Remove temporary signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/vyra-upload-key.jks"
-
-      - name: Report missing release signing
-        if: github.event_name != 'pull_request' && steps.signing.outcome != 'success'
-        run: |
-          echo "## Release APK not created" >> "$GITHUB_STEP_SUMMARY"
-          echo "The debug APK was uploaded, but release signing failed or its secrets were unavailable. No signed release APK was produced." >> "$GITHUB_STEP_SUMMARY"
-          exit 1

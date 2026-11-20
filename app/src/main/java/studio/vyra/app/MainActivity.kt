@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -155,7 +156,10 @@ private fun VyraApp() {
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            NavigationBar(
+                containerColor = Color(0xD916191F),
+                tonalElevation = 0.dp,
+            ) {
                 VyraTab.entries.filter { it != VyraTab.CREATOR }.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
@@ -219,7 +223,7 @@ private fun OverviewScreen(
             Text("Browse apps, discover VYRA builds, and manage updates from one place.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -645,7 +649,7 @@ private fun RepositoryCard(
     var downloadingPatchId by remember { mutableStateOf<String?>(null) }
     var downloadStatuses by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xB91B1F26)), shape = RoundedCornerShape(24.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(repository.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(repository.description.ifBlank { "No repository description provided." }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
