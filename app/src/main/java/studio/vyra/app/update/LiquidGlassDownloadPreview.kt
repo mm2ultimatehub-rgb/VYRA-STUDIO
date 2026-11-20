@@ -25,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +68,16 @@ fun LiquidGlassDownloadDialog(
     } else 0f
     val percent = progressPercent.coerceIn(0, 100)
     val complete = status == "APK doğrulandı · kurulum açılıyor"
+    val logoScale by animateFloatAsState(
+        targetValue = if (complete) 1f else 0.72f,
+        animationSpec = spring(dampingRatio = 0.64f, stiffness = Spring.StiffnessLow),
+        label = "liquid-v-scale",
+    )
+    val logoRotation by animateFloatAsState(
+        targetValue = if (complete) 360f else 0f,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessLow),
+        label = "liquid-v-rotation",
+    )
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -115,6 +129,20 @@ fun LiquidGlassDownloadDialog(
                         )
                         drawCircle(Color.White.copy(alpha = 0.24f), radius, center, style = Stroke(width = 1.2.dp.toPx()))
                         drawCircle(Color.White.copy(alpha = 0.13f), radius * 0.91f, center, style = Stroke(width = 3.dp.toPx()))
+                        // The supplied HTML uses a 60-mark radial glass ring.
+                        for (index in 0 until 60) {
+                            val angle = -PI.toFloat() / 2f + index / 60f * 2f * PI.toFloat()
+                            val outer = radius * if (index % 5 == 0) 1.10f else 1.075f
+                            val inner = radius * 1.045f
+                            val tickAlpha = if (index < (percent * 0.60f).toInt()) 0.82f else 0.14f
+                            drawLine(
+                                Color.White.copy(alpha = tickAlpha),
+                                Offset(center.x + cos(angle) * inner, center.y + sin(angle) * inner),
+                                Offset(center.x + cos(angle) * outer, center.y + sin(angle) * outer),
+                                strokeWidth = if (index % 5 == 0) 1.4.dp.toPx() else 0.9.dp.toPx(),
+                                cap = StrokeCap.Round,
+                            )
+                        }
                         if (fraction > 0f) {
                             val sweep = fraction * (2f * PI.toFloat())
                             val path = Path()
@@ -138,14 +166,19 @@ fun LiquidGlassDownloadDialog(
                             size = androidx.compose.ui.geometry.Size(radius * 2.16f, radius * 2.16f),
                             style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round),
                         )
-                        val v = Path().apply {
-                            moveTo(center.x - radius * 0.32f, center.y - radius * 0.24f)
-                            lineTo(center.x - radius * 0.04f, center.y + radius * 0.30f)
-                            quadraticTo(center.x, center.y + radius * 0.40f, center.x + radius * 0.06f, center.y + radius * 0.28f)
-                            lineTo(center.x + radius * 0.34f, center.y - radius * 0.24f)
+                        withTransform({
+                            rotate(logoRotation, center)
+                            scale(logoScale, logoScale, center)
+                        }) {
+                            val v = Path().apply {
+                                moveTo(center.x - radius * 0.32f, center.y - radius * 0.24f)
+                                lineTo(center.x - radius * 0.04f, center.y + radius * 0.30f)
+                                quadraticTo(center.x, center.y + radius * 0.40f, center.x + radius * 0.06f, center.y + radius * 0.28f)
+                                lineTo(center.x + radius * 0.34f, center.y - radius * 0.24f)
+                            }
+                            drawPath(v, Color.White.copy(alpha = 0.15f), style = Stroke(width = 19.dp.toPx(), cap = StrokeCap.Round))
+                            drawPath(v, Brush.linearGradient(listOf(Color.White, Color(0xFF8E929B), Color.White)), style = Stroke(width = 11.dp.toPx(), cap = StrokeCap.Round))
                         }
-                        drawPath(v, Color.White.copy(alpha = 0.15f), style = Stroke(width = 19.dp.toPx(), cap = StrokeCap.Round))
-                        drawPath(v, Brush.linearGradient(listOf(Color.White, Color(0xFF8E929B), Color.White)), style = Stroke(width = 11.dp.toPx(), cap = StrokeCap.Round))
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("$percent%", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Light, letterSpacing = (-2).sp)

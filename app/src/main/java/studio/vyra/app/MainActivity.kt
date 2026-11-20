@@ -12,10 +12,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,8 +43,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -60,6 +60,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -156,20 +158,7 @@ private fun VyraApp() {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xD916191F),
-                tonalElevation = 0.dp,
-            ) {
-                VyraTab.entries.filter { it != VyraTab.CREATOR }.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) },
-                        alwaysShowLabel = false,
-                    )
-                }
-            }
+            LiquidGlassNavigationBar(selectedTab) { selectedTab = it }
         },
     ) { innerPadding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -194,6 +183,63 @@ private fun VyraApp() {
             VyraTab.SOURCES -> SourcesScreen(innerPadding)
             VyraTab.BUILDS -> BuildsScreen(innerPadding)
             VyraTab.UPDATES -> UpdatesScreen(innerPadding)
+            }
+        }
+    }
+}
+
+/** Icon-only liquid-glass dock matching the supplied VYRA HTML navigation. */
+@Composable
+private fun LiquidGlassNavigationBar(
+    selectedTab: VyraTab,
+    onTabSelected: (VyraTab) -> Unit,
+) {
+    val tabs = VyraTab.entries.filter { it != VyraTab.CREATOR }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.045f), Color.White.copy(alpha = 0.09f)),
+                ),
+                RoundedCornerShape(999.dp),
+            )
+            .border(
+                1.dp,
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.22f))),
+                RoundedCornerShape(999.dp),
+            )
+            .padding(6.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        tabs.forEach { tab ->
+            val active = tab == selectedTab
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .size(50.dp)
+                    .clickable { onTabSelected(tab) },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (active) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .background(
+                                Brush.radialGradient(listOf(Color.White.copy(alpha = 0.34f), Color.White.copy(alpha = 0.10f), Color.Transparent)),
+                                CircleShape,
+                            )
+                            .border(1.dp, Color.White.copy(alpha = 0.32f), CircleShape),
+                    )
+                }
+                Icon(
+                    imageVector = tab.icon,
+                    contentDescription = tab.label,
+                    tint = if (active) Color.White else Color.White.copy(alpha = 0.48f),
+                    modifier = Modifier.size(22.dp),
+                )
             }
         }
     }
