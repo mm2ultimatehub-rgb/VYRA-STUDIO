@@ -376,6 +376,10 @@ private fun UpdatesScreen(padding: PaddingValues) {
     val context = LocalContext.current
     PageColumn(padding) {
         PageHeading("Updates", "VYRA sürümlerini ve güvenli güncelleme durumunu buradan takip et.")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Yeni sürüm kontrolü", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            studio.vyra.app.update.UpdateCheckAction()
+        }
         InfoCard("VYRA Store güncellemesi", "En yeni kararlı sürüm GitHub Releases üzerinden kontrol edilir. Kontrol için üst çubuktaki güncelleme simgesine dokun.")
         InfoCard("Güvenlik kontrolü", "Bir APK ancak HTTPS kaynağı, paket kimliği, imza sertifikası ve indirilen dosyanın SHA-256 özeti doğrulandıktan sonra kuruluma sunulmalıdır.")
         InfoCard("Kurulum hakkında", "Android, uygulama güncellemesi için sistem kurulum onayı isteyebilir. VYRA bu onayı atlamaz ve sessiz kurulum yaptığını iddia etmez.")
