@@ -155,6 +155,11 @@ class StoreCatalogClient(
             }
         }
 
+    private fun isHttpsUrl(value: String): Boolean = runCatching {
+        val uri = URI(value)
+        uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
+    }.getOrDefault(false)
+
     private fun validateIndexUrl(value: String): URI {
         require(value.length <= MAX_URL_LENGTH) { "VYRA catalog URL is too long." }
         val uri = runCatching { URI(value.trim()) }
