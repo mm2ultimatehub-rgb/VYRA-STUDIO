@@ -156,7 +156,10 @@ private fun VyraApp() {
             )
         },
         bottomBar = {
-            NavigationBar(\n                containerColor = Color(0xD916191F),\n                tonalElevation = 0.dp,\n            ) {
+            NavigationBar(
+                containerColor = Color(0xD916191F),
+                tonalElevation = 0.dp,
+            ) {
                 VyraTab.entries.filter { it != VyraTab.CREATOR }.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
