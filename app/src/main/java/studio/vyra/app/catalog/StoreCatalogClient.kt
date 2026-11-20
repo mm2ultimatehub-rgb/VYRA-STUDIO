@@ -14,6 +14,11 @@ data class StoreCatalogEntry(
     val category: String,
     val status: String,
     val patchSourceIds: List<String>,
+    val iconUrl: String? = null,
+    val versionName: String? = null,
+    val versionCode: Long? = null,
+    val downloadUrl: String? = null,
+    val sha256: String? = null,
 )
 
 class StoreCatalogClient(
@@ -99,6 +104,16 @@ class StoreCatalogClient(
                         "Duplicate Android package: $packageName"
                     }
 
+                    val iconUrl = item.optString("iconUrl").trim().takeIf { it.isNotEmpty() && it != "null" }
+                    val downloadUrl = item.optString("downloadUrl").trim().takeIf { it.isNotEmpty() && it != "null" }
+                    val versionName = item.optString("versionName").trim().takeIf { it.isNotEmpty() && it != "null" }
+                    val versionCode = if (item.has("versionCode") && !item.isNull("versionCode")) item.getLong("versionCode") else null
+                    val sha256 = item.optString("sha256").trim().takeIf { it.isNotEmpty() && it != "null" }?.lowercase()
+                    require(iconUrl == null || isHttpsUrl(iconUrl)) { "App icons must use HTTPS URLs." }
+                    require(downloadUrl == null || isHttpsUrl(downloadUrl)) { "App downloads must use HTTPS URLs." }
+                    require(sha256 == null || SHA256_PATTERN.matches(sha256)) { "App APK SHA-256 must contain 64 hexadecimal characters." }
+                    require(versionCode == null || versionCode >= 0) { "App versionCode cannot be negative." }
+
                     val sources = item.optJSONArray("patchSourceIds")
                     val sourceIds = buildList {
                         if (sources != null) {
@@ -119,6 +134,11 @@ class StoreCatalogClient(
                             category = category,
                             status = availability,
                             patchSourceIds = sourceIds,
+                            iconUrl = iconUrl,
+                            versionName = versionName,
+                            versionCode = versionCode,
+                            downloadUrl = downloadUrl,
+                            sha256 = sha256,
                         ),
                     )
                 }
@@ -158,6 +178,7 @@ class StoreCatalogClient(
         const val MAX_APPS = 100
         val ID_PATTERN = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{1,79}")
         val PACKAGE_PATTERN = Regex("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")
+        val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
         val ALLOWED_STATUSES = setOf(
             "candidate",
             "experimental",
