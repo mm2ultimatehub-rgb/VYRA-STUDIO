@@ -1,5 +1,6 @@
 package studio.vyra.app
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -221,21 +222,51 @@ private fun OverviewScreen(
 
 @Composable
 private fun StoreScreen(padding: PaddingValues) {
+    val context = LocalContext.current
     PageColumn(padding) {
-        PageHeading("Vyra Store", "Discover apps with known patch-source coverage.")
+        PageHeading("VYRA Store", "Browse apps and see exactly what VYRA supports.")
         InfoCard(
-            "Catalog preview",
-            "This is the first app catalog, not a claim that every listed app is currently patchable. Exact bundle versions and APK compatibility are checked before a build.",
+            "App catalog",
+            "Choose an app to open its official store listing. VYRA downloads and updates will appear here only after a compatible build has been published and verified.",
         )
         studio.vyra.app.catalog.AppCatalog.apps.forEach { app ->
-            InfoCard(
-                app.name,
-                "${app.packageName}\n${app.availability.label}\n${app.availability.detail}",
-            )
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(app.packageName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(app.availability.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(app.availability.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(
+                        onClick = {
+                            val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${app.packageName}"))
+                            try {
+                                context.startActivity(marketIntent)
+                            } catch (_: Exception) {
+                                context.startActivity(
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse("https://play.google.com/store/apps/details?id=${app.packageName}"),
+                                    ),
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Open official app page")
+                    }
+                }
+            }
         }
         InfoCard(
             "Safety and compatibility",
-            "Community bundles are treated as untrusted until their publisher, release hash, and target app version are verified. Apps without a compatible bundle will be marked unsupported.",
+            "A listed app is not automatically patchable. VYRA will enable its own download and update actions only after the exact APK, patch bundle, signing identity, and installation flow have been verified.",
         )
     }
 }
