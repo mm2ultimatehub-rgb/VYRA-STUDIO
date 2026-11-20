@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -83,6 +83,16 @@ jobs:
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK"
           "$APKSIGNER" verify --print-certs "$APK"
+
+      - name: Publish signed APK as GitHub Release
+        if: github.event_name == 'push' && steps.signing.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v0.1.1 app/build/outputs/apk/release/app-release.apk \
+            --title "VYRA Store v0.1.1" \
+            --notes "VYRA Store 0.1.1: monochrome liquid-glass interface and Updates center. APK built and signature-verified by Android CI."
 
       - name: Upload signed release APK for internal verification only
         if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
