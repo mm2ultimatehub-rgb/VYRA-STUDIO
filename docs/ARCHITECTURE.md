@@ -16,7 +16,7 @@ The MVP is Android-first and native: Kotlin, Jetpack Compose, Material 3, and An
 - `feature:repositories`: repository management.
 - `feature:builds`: build history, logs, validation, and exports.
 
-The current MVP keeps implementation in a small Android module while domain code is separated by package. Further Gradle module splitting can wait until the domain stabilizes.
+The current MVP keeps one Android Gradle module. UI code is split into focused Kotlin files (`MainActivity`, `OverviewScreen`, `StoreScreen`, `PatcherScreen`, `CreatorScreen`, `SourcesScreen`, `BuildsScreen`, and `SharedComponents`) within the app package; domain and infrastructure remain in dedicated `apk`, `catalog`, `repository`, and `update` packages. This is an intentional package-level separation, not a claim that independent Gradle feature modules already exist. Further Gradle module splitting can wait until the domain stabilizes.
 
 ## APK inspection
 
