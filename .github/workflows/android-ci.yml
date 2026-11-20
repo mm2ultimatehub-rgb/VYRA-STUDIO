@@ -93,3 +93,10 @@ jobs:
       - name: Remove temporary signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/vyra-upload-key.jks"
+
+      - name: Report missing release signing
+        if: github.event_name != 'pull_request' && steps.signing.outcome != 'success'
+        run: |
+          echo "## Release APK not created" >> "$GITHUB_STEP_SUMMARY"
+          echo "The debug APK was uploaded, but release signing failed or its secrets were unavailable. No signed release APK was produced." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
