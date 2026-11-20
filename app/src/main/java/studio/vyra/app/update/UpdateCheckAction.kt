@@ -1,5 +1,7 @@
 package studio.vyra.app.update
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
@@ -27,7 +29,6 @@ fun UpdateCheckAction() {
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<UpdateCheckResult?>(null) }
-    var showDownloadPreview by remember { mutableStateOf(false) }
 
     IconButton(
         onClick = {
@@ -80,10 +81,11 @@ fun UpdateCheckAction() {
                 confirmButton = {
                     Button(
                         onClick = {
+                            val releaseUrl = state.update.releasePageUrl
                             result = null
-                            showDownloadPreview = true
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)))
                         },
-                    ) { Text("Preview download design") }
+                    ) { Text("Open GitHub release") }
                 },
                 dismissButton = {
                     TextButton(onClick = { result = null }) { Text("Close") }
@@ -106,9 +108,5 @@ fun UpdateCheckAction() {
                 },
             )
         }
-    }
-
-    if (showDownloadPreview) {
-        LiquidGlassDownloadPreview(onDismiss = { showDownloadPreview = false })
     }
 }

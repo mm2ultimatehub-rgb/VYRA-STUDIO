@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -78,6 +80,7 @@ import studio.vyra.app.repository.PatchRepository
 import studio.vyra.app.repository.RepositoryClient
 import studio.vyra.app.repository.RepositorySourceStore
 import studio.vyra.app.ui.theme.VyraTheme
+import studio.vyra.app.ui.GlassBackdrop
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,6 +103,7 @@ private enum class VyraTab(
     CREATOR("Creator", Icons.Filled.Edit),
     SOURCES("Sources", Icons.Filled.Folder),
     BUILDS("Builds", Icons.Filled.History),
+    UPDATES("Updates", Icons.Filled.SystemUpdateAlt),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -164,7 +168,9 @@ private fun VyraApp() {
             }
         },
     ) { innerPadding ->
-        when (selectedTab) {
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            GlassBackdrop()
+            when (selectedTab) {
             VyraTab.OVERVIEW -> OverviewScreen(
                 padding = innerPadding,
                 onOpenStore = { selectedTab = VyraTab.STORE },
@@ -183,6 +189,8 @@ private fun VyraApp() {
             )
             VyraTab.SOURCES -> SourcesScreen(innerPadding)
             VyraTab.BUILDS -> BuildsScreen(innerPadding)
+            VyraTab.UPDATES -> UpdatesScreen(innerPadding)
+            }
         }
     }
 }
@@ -360,6 +368,26 @@ private fun StoreScreen(padding: PaddingValues) {
             "Safe downloads and updates",
             "VYRA download and update actions will appear only after the exact APK, package identity, signing certificate, file size, and SHA-256 have been verified.",
         )
+    }
+}
+
+@Composable
+private fun UpdatesScreen(padding: PaddingValues) {
+    val context = LocalContext.current
+    PageColumn(padding) {
+        PageHeading("Updates", "VYRA sürümlerini ve güvenli güncelleme durumunu buradan takip et.")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Yeni sürüm kontrolü", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            studio.vyra.app.update.UpdateCheckAction()
+        }
+        InfoCard("VYRA Store güncellemesi", "En yeni kararlı sürüm GitHub Releases üzerinden kontrol edilir. Kontrol için üst çubuktaki güncelleme simgesine dokun.")
+        InfoCard("Güvenlik kontrolü", "Bir APK ancak HTTPS kaynağı, paket kimliği, imza sertifikası ve indirilen dosyanın SHA-256 özeti doğrulandıktan sonra kuruluma sunulmalıdır.")
+        InfoCard("Kurulum hakkında", "Android, uygulama güncellemesi için sistem kurulum onayı isteyebilir. VYRA bu onayı atlamaz ve sessiz kurulum yaptığını iddia etmez.")
+        Button(onClick = {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mm2ultimatehub-rgb/VYRA-STUDIO/releases")))
+        }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+            Text("GitHub sürümlerini aç")
+        }
     }
 }
 
