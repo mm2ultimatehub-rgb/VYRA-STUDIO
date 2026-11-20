@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +58,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -153,7 +158,7 @@ private fun VyraApp() {
                 },
                 actions = { studio.vyra.app.update.UpdateCheckAction() },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
@@ -195,7 +200,7 @@ private fun LiquidGlassNavigationBar(
     onTabSelected: (VyraTab) -> Unit,
 ) {
     val tabs = VyraTab.entries.filter { it != VyraTab.CREATOR }
-    Row(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 10.dp)
@@ -211,35 +216,46 @@ private fun LiquidGlassNavigationBar(
                 RoundedCornerShape(999.dp),
             )
             .padding(6.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        tabs.forEach { tab ->
-            val active = tab == selectedTab
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .size(50.dp)
-                    .clickable { onTabSelected(tab) },
-                contentAlignment = Alignment.Center,
-            ) {
-                if (active) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(
-                                Brush.radialGradient(listOf(Color.White.copy(alpha = 0.34f), Color.White.copy(alpha = 0.10f), Color.Transparent)),
-                                CircleShape,
-                            )
-                            .border(1.dp, Color.White.copy(alpha = 0.32f), CircleShape),
+        val slotWidth = maxWidth / tabs.size
+        val activeIndex = tabs.indexOf(selectedTab).coerceAtLeast(0)
+        val indicatorX by animateDpAsState(
+            targetValue = slotWidth * activeIndex,
+            animationSpec = spring(dampingRatio = 0.68f, stiffness = Spring.StiffnessLow),
+            label = "liquid-glass-dock-slide",
+        )
+
+        Box(
+            modifier = Modifier
+                .offset(x = indicatorX)
+                .size(slotWidth, 50.dp)
+                .background(
+                    Brush.radialGradient(listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.13f), Color.Transparent)),
+                    CircleShape,
+                )
+                .border(1.dp, Color.White.copy(alpha = 0.34f), CircleShape),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            tabs.forEach { tab ->
+                val active = tab == selectedTab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .size(50.dp)
+                        .clickable { onTabSelected(tab) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = tab.icon,
+                        contentDescription = tab.label,
+                        tint = if (active) Color.White else Color.White.copy(alpha = 0.48f),
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-                Icon(
-                    imageVector = tab.icon,
-                    contentDescription = tab.label,
-                    tint = if (active) Color.White else Color.White.copy(alpha = 0.48f),
-                    modifier = Modifier.size(22.dp),
-                )
             }
         }
     }
@@ -776,8 +792,19 @@ private fun PageHeading(title: String, subtitle: String) {
 
 @Composable
 private fun InfoCard(title: String, body: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val shape = RoundedCornerShape(22.dp)
+    Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent), shape = shape) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.13f), Color.White.copy(alpha = 0.045f), Color.White.copy(alpha = 0.08f))),
+                    shape,
+                )
+                .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.32f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.18f))), shape)
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -786,9 +813,17 @@ private fun InfoCard(title: String, body: String) {
 
 @Composable
 private fun ActionCard(title: String, description: String, action: String, onClick: () -> Unit) {
-    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
+    val shape = RoundedCornerShape(22.dp)
+    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = Color.Transparent), shape = shape) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(18.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.13f), Color.White.copy(alpha = 0.045f), Color.White.copy(alpha = 0.08f))),
+                    shape,
+                )
+                .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.32f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.18f))), shape)
+                .padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
