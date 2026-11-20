@@ -16,6 +16,39 @@ android {
         versionName = "0.1.0"
     }
 
+    // Release signing is supplied only by the CI environment. Never commit a keystore.
+    val signingStoreFile = providers.environmentVariable("VYRA_KEYSTORE_FILE").orNull
+    val signingStorePassword = providers.environmentVariable("VYRA_KEYSTORE_PASSWORD").orNull
+    val signingKeyAlias = providers.environmentVariable("VYRA_KEY_ALIAS").orNull
+    val signingKeyPassword = providers.environmentVariable("VYRA_KEY_PASSWORD").orNull
+    val hasReleaseSigning = listOf(
+        signingStoreFile,
+        signingStorePassword,
+        signingKeyAlias,
+        signingKeyPassword
+    ).all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(signingStoreFile!!)
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            // CI refuses to build a release unless all signing secrets are configured.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            isMinifyEnabled = false
+        }
+    }
+
     buildFeatures {
         compose = true
     }
@@ -24,7 +57,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
 }
 
 kotlin {

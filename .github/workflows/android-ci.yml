@@ -39,9 +39,55 @@ jobs:
       - name: Run unit tests and build debug APK
         run: gradle --no-daemon testDebugUnitTest assembleDebug
 
+      - name: Prepare release keystore
+        if: github.event_name != 'pull_request'
+        env:
+          VYRA_KEYSTORE_BASE64: ${{ secrets.VYRA_KEYSTORE_BASE64 }}
+          VYRA_KEYSTORE_PASSWORD: ${{ secrets.VYRA_KEYSTORE_PASSWORD }}
+          VYRA_KEY_ALIAS: ${{ secrets.VYRA_KEY_ALIAS }}
+          VYRA_KEY_PASSWORD: ${{ secrets.VYRA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$VYRA_KEYSTORE_BASE64" || (echo "Missing VYRA_KEYSTORE_BASE64" >&2; exit 1)
+          test -n "$VYRA_KEYSTORE_PASSWORD" || (echo "Missing VYRA_KEYSTORE_PASSWORD" >&2; exit 1)
+          test -n "$VYRA_KEY_ALIAS" || (echo "Missing VYRA_KEY_ALIAS" >&2; exit 1)
+          test -n "$VYRA_KEY_PASSWORD" || (echo "Missing VYRA_KEY_PASSWORD" >&2; exit 1)
+          echo "$VYRA_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/vyra-upload-key.jks"
+          test -s "$RUNNER_TEMP/vyra-upload-key.jks"
+          keytool -list -keystore "$RUNNER_TEMP/vyra-upload-key.jks" -storepass "$VYRA_KEYSTORE_PASSWORD" -alias "$VYRA_KEY_ALIAS" >/dev/null
+          echo "VYRA_KEYSTORE_FILE=$RUNNER_TEMP/vyra-upload-key.jks" >> "$GITHUB_ENV"
+          echo "VYRA_KEYSTORE_PASSWORD=$VYRA_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "VYRA_KEY_ALIAS=$VYRA_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "VYRA_KEY_PASSWORD=$VYRA_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        if: github.event_name != 'pull_request'
+        run: gradle --no-daemon assembleRelease
+
+      - name: Verify release APK signature
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          apksigner verify --verbose "$APK"
+          apksigner verify --print-certs "$APK"
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: vyra-store-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Upload signed release APK for internal verification only
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyra-store-signed-release-internal
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/vyra-upload-key.jks"
