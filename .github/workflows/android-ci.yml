@@ -39,8 +39,17 @@ jobs:
       - name: Run unit tests and build debug APK
         run: gradle --no-daemon testDebugUnitTest assembleDebug
 
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyra-store-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
       - name: Prepare release keystore
+        id: signing
         if: github.event_name != 'pull_request'
+        continue-on-error: true
         env:
           VYRA_KEYSTORE_BASE64: ${{ secrets.VYRA_KEYSTORE_BASE64 }}
           VYRA_KEYSTORE_PASSWORD: ${{ secrets.VYRA_KEYSTORE_PASSWORD }}
@@ -61,11 +70,11 @@ jobs:
           echo "VYRA_KEY_PASSWORD=$VYRA_KEY_PASSWORD" >> "$GITHUB_ENV"
 
       - name: Build signed release APK
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
         run: gradle --no-daemon assembleRelease
 
       - name: Verify release APK signature
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
@@ -73,15 +82,8 @@ jobs:
           apksigner verify --verbose "$APK"
           apksigner verify --print-certs "$APK"
 
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: vyra-store-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-
       - name: Upload signed release APK for internal verification only
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.signing.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: vyra-store-signed-release-internal
