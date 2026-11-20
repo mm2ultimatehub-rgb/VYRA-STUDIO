@@ -102,7 +102,7 @@ private enum class VyraTab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VyraApp() {
-    var selectedTab by remember { mutableStateOf(VyraTab.OVERVIEW) }
+    var selectedTab by remember { mutableStateOf(VyraTab.STORE) }
     var selectedApk by remember { mutableStateOf<Uri?>(null) }
 
     val apkPicker = rememberLauncherForActivityResult(
@@ -117,13 +117,13 @@ private fun VyraApp() {
                 title = {
                     Column {
                         Text(
-                            text = "VYRA STUDIO",
+                            text = "VYRA STORE",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp,
                         )
                         Text(
-                            text = "ANDROID PATCH WORKSPACE",
+                            text = "APP CATALOG & UPDATE HUB",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 1.2.sp,
@@ -192,9 +192,9 @@ private fun OverviewScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Text("Your workspace,\nwithout the clutter.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Your apps,\nin one place.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("Discover patches, prepare builds, and keep every source in one place.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Browse apps, discover VYRA builds, and manage updates from one place.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
